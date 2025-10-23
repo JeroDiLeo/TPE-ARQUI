@@ -1,5 +1,5 @@
 #include "include/SysCall_Lib.h"
-#include "include/interrups.h"
+#include "include/interrupts.h"
 
 #define STDIN 0
 #define STDOUT 1
@@ -18,9 +18,9 @@ if(fd == STDIN) {
     return size; //devuelve la cantidad leida
 }
 
-uint64_t sys_write(uint64_t fd, char * buffer, uint64_t size, unint64_t color){
+uint64_t sys_write(uint64_t fd, char * buffer, uint64_t size, uint64_t color){
     if(fd == STDOUT) {
-        for(int i = 0; i < sizel i++){ 
+        for(int i = 0; i < size; i++){ 
             
         }
     }
