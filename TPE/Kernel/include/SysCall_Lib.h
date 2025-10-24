@@ -2,7 +2,7 @@
 #define SYSCALL_LIB_H
 #include <stdint.h>
 
-#define REGS_COUNT 17
+#define TOTAL_REGS 17
 
 // enum para los registros que se usaran para distinguir que syscall quiere el usario
 typedef enum {
