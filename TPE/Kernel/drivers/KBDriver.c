@@ -44,12 +44,13 @@ static Tbuffer buffer = {
     .size = 0
 };
 
-
+//Flags para teclas especiales
 static char ShiftOn = 0;
 static char CapsOn = 0;
 static char CtrlOn = 0;
 static char fullRegisters = 0;
 static uint64_t registers[TOTAL_REGS];
+
 
 void keyboard_check(){
     uint8_t scancode = _getKeyScan();

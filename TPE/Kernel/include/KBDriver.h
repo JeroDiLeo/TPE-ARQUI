@@ -12,7 +12,7 @@
 #define LALT            0x38
 #define RALT            0x38  // (requiere E0 prefix)
 
-// Offset para release codes (cuando se suelta la tecla)
+// Offset para release codes (cuando se suelta la tecla) (Es el flag )
 #define RELEASE_OFFSET  0x80
 
 // Release codes (Make code + 0x80)
@@ -29,6 +29,7 @@
 #define SPACE           0x39
 
 #define KEYS_SIZE  59
+
 
 // Funciones
 void keyboard_check();
