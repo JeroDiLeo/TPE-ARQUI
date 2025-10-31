@@ -3,4 +3,5 @@
 uint64_t getTime(uint64_t param) {
     return _readTime(param);
 }
-//Ver porque retorna 64 bits  si solo necesito 8 bits 
+//retorna 64 bits  para compatibilidad con syscallHandler.c
+//@return uint64_t Valor del componente (solo los 8 bits inferiores son válidos)

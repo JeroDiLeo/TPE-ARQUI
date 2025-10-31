@@ -138,7 +138,7 @@ void updateReg(){
 }
 
 
-char getRegisters(uint64_t * r){
+int getRegisters(uint64_t * r){
     if(r == NULL || !fullRegisters){
         return 0;
     }

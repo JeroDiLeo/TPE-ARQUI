@@ -99,17 +99,32 @@ SECTION .text
     mov rax, [rsp + 0]         ; RIP
     mov [regs +15*8], rax
 
-    mov rax, [rsp + 24]        ; RSP (si hubo cambio de CPL)
-    mov [regs +16*8], rax
-
     mov rax, [rsp + 16]        ; RFLAGS
     mov [regs +17*8], rax
 
     mov rax, [rsp + 8]         ; CS
     mov [regs +18*8], rax
 
-    mov rax, [rsp + 32]        ; SS
+    ; Verificar si vino de userland para capturar RSP/SS correctamente
+    mov rbx, [rsp + 8]         ; CS
+    test bl, 3                 ; ¿CPL = 3? (userland)
+    jz .from_kernel_snapshot   ; Si es 0, vino del kernel
+
+    ; Desde userland: CPU pusheo SS y RSP
+    mov rax, [rsp + 24]        ; RSP de usuario
+    mov [regs +16*8], rax
+    mov rax, [rsp + 32]        ; SS de usuario
     mov [regs +19*8], rax
+    jmp .snapshot_done
+
+.from_kernel_snapshot:
+    ; Desde kernel: usar RSP actual (antes del push del marco)
+    lea rax, [rsp + 40]        ; RSP antes del marco de interrupción (5 qwords)
+    mov [regs +16*8], rax
+    mov rax, 0x10              ; SS del kernel (típicamente segmento 0x10)
+    mov [regs +19*8], rax
+
+.snapshot_done:
 
 %endmacro
 
@@ -121,16 +136,52 @@ _getSnapshot:
 ;=======================
 ;    Exception Master
 ;=======================
+; Parámetro: %1 = número de excepción (0=divide, 6=opcode)
+;
+; Comportamiento:
+; - Si vino de USERLAND: muestra info, espera tecla, resetea a shell
+; - Si vino de KERNEL:   muestra info (si es posible) y detiene sistema
+
 %macro exceptionHandlerMacro 1
-    fillSnapshot
-    mov  rdi, %1                ; vector (0 o 6)
-    call exceptionHandler
+    ; Primero verificar origen ANTES de fillSnapshot (por si acaso)
+    mov  rax, [rsp + 8]         ; CS del marco de interrupción
+    test al, 3                  ; ¿CPL = 3? (userland)
+    jz   .kernel_exception      ; Si es 0, vino del kernel -> panic
+
+    ; === EXCEPCIÓN DESDE USERLAND ===
+    fillSnapshot                ; Captura estado completo
+    mov  rdi, %1                ; Vector de excepción (0 o 6)
+    call exceptionHandler       ; Muestra pantalla azul, registros, espera tecla
+    
+    ; Al retornar de exceptionHandler, resetear a shell
     call getStackBase           ; RAX = RSP de usuario limpio
     mov  [rsp + 24], rax        ; RSP de retorno (user)
     mov  rax, userland          ; RIP de retorno (entry shell)
     mov  [rsp + 0],  rax
-    iretq
+    iretq                       ; Retornar a shell con stack limpio
+
+.kernel_exception:
+    ; === EXCEPCIÓN DESDE KERNEL ===
+    ; El kernel no debería fallar. Si falla, el sistema está corrupto.
+    fillSnapshot                ; Captura lo que se pueda
+    mov  rdi, %1
+    
+    ; Intentar mostrar info (puede fallar si el kernel está muy corrupto)
+    call exceptionHandler
+    
+    ; Detener el sistema permanentemente
+    cli                         ; Deshabilitar interrupciones
+    hlt                         ; Detener CPU
+    ; Por si acaso hlt retorna (NMI, SMI, etc):
+.hang_forever:
+    cli
+    hlt
+    jmp .hang_forever
 %endmacro
+
+_cli:
+    cli  ; deshabilitar interrupciones
+    ret
 
 _sti:  
     sti  ; habilitar interrupciones
@@ -175,19 +226,12 @@ picSlaveMask:
 ;     Interrupt Master
 ;==========================
 %macro irqHandlerMaster 1
-	CTX_SAVE
-
-	mov rsi, rsp ; pasaje del "vector" de registros
-	mov rdi, %1 ; pasaje de parametro
-
-    ; estaba como irqHandler, lo cambiamos por irqDispatcher
-	call irqDispatcher
-
-	; signal pic EOI (End of Interrupt)
-	; mov al, PIC_EOI
-	; out PIC1_CMD, al
-
-	CTX_RESTORE
+	CTX_SAVE 1              ; Guardar todos los registros incluyendo RAX
+	
+	mov rdi, %1             ; Primer argumento: número de IRQ
+	call irqDispatcher      ; Llamar handler en C (envía EOI internamente)
+	
+	CTX_RESTORE 1           ; Restaurar todos los registros incluyendo RAX
 	iretq
 %endmacro
 

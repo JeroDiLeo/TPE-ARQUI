@@ -30,11 +30,14 @@
 
 #define KEYS_SIZE  59
 
+// Cantidad de registros capturados por Ctrl+R
+// No incluye RFLAGS, CS, SS (innecesarios en contexto de handler kernel)
+#define TOTAL_REGS 17
 
 // Funciones
 void keyboard_check();
 char keyboard_getchar();
 void updateReg();
-char getRegisters(uint64_t * r);
+int getRegisters(uint64_t * r);
 
 #endif // KBDRIVER_H

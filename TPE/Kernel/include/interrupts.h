@@ -3,23 +3,22 @@
 
 #include <stdint.h>
 
-void interrupt_keyboard(void);
-void interrupt_timerTick(void);
-void interrupt_syscall(void);
-void exception_invalidOpCode(void);
+// Funciones ASM exportadas
+void _cli(void);                    // Deshabilitar interrupciones
+void _sti(void);                    // Habilitar interrupciones
+void _hlt(void);                    // Sleep con interrupciones
+void haltcpu(void);                 // Detener CPU permanentemente
+
+void picMasterMask(uint8_t mask);   
+void picSlaveMask(uint8_t mask);    
+
+uint64_t * _getSnapshot(void);      // Obtener snapshot de registros
+
+// Handlers de excepciones e interrupciones
 void exception_divideByZero(void);
-
-void _cli(void);
-
-void _sti(void);
-
-void _hlt(void);
-
-void picMasterMask(uint8_t mask);
-
-void picSlaveMask(uint8_t mask);
-
-//Termina la ejecución de la cpu.
-void haltcpu(void);
+void exception_invalidOpCode(void);
+void interrupt_timerTick(void);
+void interrupt_keyboard(void);
+void interrupt_syscall(void);
 
 #endif

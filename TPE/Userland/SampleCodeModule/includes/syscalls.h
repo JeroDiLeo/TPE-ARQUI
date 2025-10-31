@@ -1,0 +1,46 @@
+#ifndef SYSCALLS_H
+#define SYSCALLS_H
+
+#include <stdint.h>
+
+// Prototipos de syscalls (implementadas en asm/syscall.asm)
+extern uint64_t _sys_read(uint64_t fd, char *buffer, uint64_t count);
+extern uint64_t _sys_write(uint64_t fd, const char *buffer, uint64_t count, uint64_t color);
+extern uint64_t _sys_drawRectangle(uint64_t x, uint64_t y, uint64_t width, uint64_t height, uint64_t color);
+extern uint64_t _sys_clearScreen(void);
+extern uint64_t _sys_getCoords(void);
+extern uint64_t _sys_getScreenInfo(void);
+extern uint64_t _sys_getFontInfo(void);
+extern uint64_t _sys_getTime(uint64_t component);
+extern uint64_t _sys_setFontScale(uint64_t scale);
+extern uint64_t _sys_getRegisters(uint64_t *buffer);
+extern uint64_t _sys_sleep(uint64_t milliseconds);
+extern uint64_t _sys_playSound(uint64_t frequency, uint64_t duration);
+
+// Wrappers con nombres más amigables
+#define sys_read(fd, buf, count) _sys_read(fd, buf, count)
+#define sys_write(fd, buf, count, color) _sys_write(fd, buf, count, color)
+#define sys_draw_rectangle(x, y, w, h, color) _sys_drawRectangle(x, y, w, h, color)
+#define sys_clear_screen() _sys_clearScreen()
+#define sys_get_coords() _sys_getCoords()
+#define sys_get_screen_info() _sys_getScreenInfo()
+#define sys_get_font_info() _sys_getFontInfo()
+#define sys_get_time(component) _sys_getTime(component)
+#define sys_set_font_scale(scale) _sys_setFontScale(scale)
+#define sys_get_registers(buffer) _sys_getRegisters(buffer)
+#define sys_sleep(ms) _sys_sleep(ms)
+#define sys_play_sound(freq, duration) _sys_playSound(freq, duration)
+
+// Colores comunes
+#define COLOR_BLACK   0x000000
+#define COLOR_WHITE   0xFFFFFF
+#define COLOR_RED     0xFF0000
+#define COLOR_GREEN   0x00FF00
+#define COLOR_BLUE    0x0000FF
+#define COLOR_YELLOW  0xFFFF00
+#define COLOR_CYAN    0x00FFFF
+#define COLOR_MAGENTA 0xFF00FF
+#define COLOR_GRAY    0x808080
+#define COLOR_ORANGE  0xFFA500
+
+#endif

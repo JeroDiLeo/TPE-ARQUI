@@ -14,6 +14,9 @@ extern exceptionHandler
 section .text
 	
 cpuVendor:
+	push rbp
+	mov rbp, rsp
+
 	push rbx
 
 	xor eax, eax
@@ -27,6 +30,9 @@ cpuVendor:
 	mov rax, rdi
 
 	pop rbx
+
+	mov rsp, rbp
+	pop rbp
 	ret
 
 _updateReg:
@@ -65,28 +71,28 @@ _getKeyScan:
 	xor rax, rax
 	in al, 0x64              ; Leer status del teclado
 	test al, 0x1             ; Verificar si hay datos disponibles
-	jz .no_data
-	
-	in al, 0x60              ; Leer scancode del data port
+	jnz .has_data
 	ret
 
-.no_data:
-	xor rax, rax             ; Retornar 0 si no hay datos
+.has_data:
+	in al, 0x60              ;Posicion donde esta el data port del teclado en i/o
 	ret
 
-; void _outbyte(uint16_t port, uint8_t value)
-; rdi = port, sil = value
+; es void esta funcion
 _outbyte:
+	push rdx; guardo lo que tenia rdx antes
 	mov dx, di
 	mov al, sil
 	out dx, al
+	pop rdx
 	ret
 
-; uint8_t _inbyte(uint16_t port)
-; rdi = port, retorna en al
+; devuelve 8 bits(uint8_t )
 _inbyte:
+	push rdx; guardo lo que tenia rdx antes
 	mov dx, di
 	in al, dx
+	pop rdx; recupero lo que tenia rdx antes
 	ret
 
 _readTime:
