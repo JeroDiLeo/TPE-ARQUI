@@ -10,6 +10,7 @@ char *cpuVendor(char *result);
 
 size_t strlen(const char *str);
 void reverse(char *str);
-char * itoaHex(uint64_t num, char * str); 
+//Convierte un numero entero a string en base decimal
+char * itoaHex(uint64_t num, char * str); //Va en lib.c del userland
 
 #endif

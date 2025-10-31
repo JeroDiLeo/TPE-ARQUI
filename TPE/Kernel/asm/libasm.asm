@@ -14,88 +14,101 @@ extern exceptionHandler
 section .text
 	
 cpuVendor:
-	push rbp
-	mov rbp, rsp
-
 	push rbx
 
-	mov rax, 0
+	xor eax, eax
 	cpuid
-
 
 	mov [rdi], ebx
 	mov [rdi + 4], edx
 	mov [rdi + 8], ecx
-
-	mov byte [rdi+13], 0
+	mov byte [rdi + 12], 0
 
 	mov rax, rdi
 
 	pop rbx
-
-	mov rsp, rbp
-	pop rbp
 	ret
 
 _updateReg:
-mov [_registersMemory], rax
-mov [_registersMemory + 1*8], rbx
-mov [_registersMemory + 2*8], rcx
-mov [_registersMemory + 3*8], rdx
-mov [_registersMemory + 4*8], rsi
-mov [_registersMemory + 5*8], rdi
-mov [_registersMemory + 6*8], rbp
-mov [_registersMemory + 7*8], r8
-mov [_registersMemory + 8*8], r9
-mov [_registersMemory + 9*8], r10
-mov [_registersMemory + 10*8], r11
-mov [_registersMemory + 11*8], r12
-mov [_registersMemory + 12*8], r13
-mov [_registersMemory + 13*8], r14
-mov [_registersMemory + 14*8], r15
-mov rax, [rsp]
-mov [_registersMemory + 15*8], rax ;rip
-lea rax, [rsp + 8] ; rsp antes del call (+8 para "deshacer" el push)
-mov [_registersMemory + 16*8], rax ;rsp
-ret
+	; Guardar todos los registros de propósito general
+	mov [_registersMemory], rax
+	mov [_registersMemory + 1*8], rbx
+	mov [_registersMemory + 2*8], rcx
+	mov [_registersMemory + 3*8], rdx
+	mov [_registersMemory + 4*8], rsi
+	mov [_registersMemory + 5*8], rdi
+	mov [_registersMemory + 6*8], rbp
+	mov [_registersMemory + 7*8], r8
+	mov [_registersMemory + 8*8], r9
+	mov [_registersMemory + 9*8], r10
+	mov [_registersMemory + 10*8], r11
+	mov [_registersMemory + 11*8], r12
+	mov [_registersMemory + 12*8], r13
+	mov [_registersMemory + 13*8], r14
+	mov [_registersMemory + 14*8], r15
+	
+	; Guardar RIP (dirección de retorno en el stack)
+	mov rax, [rsp]
+	mov [_registersMemory + 15*8], rax
+	
+	; Guardar RSP antes del call (+8 para compensar el push del call)
+	lea rax, [rsp + 8]
+	mov [_registersMemory + 16*8], rax
+	
+	ret
 
 _getRegs:
-mov rax, _registersMemory
-ret
+	mov rax, _registersMemory
+	ret
 
 _getKeyScan:
-xor rax, rax
-in al, 0x64 ; hay que fijarnos el status del port, si esta en 0 no hay datos 
-test al, 0x1
-jnz .has_data
-ret
+	xor rax, rax
+	in al, 0x64              ; Leer status del teclado
+	test al, 0x1             ; Verificar si hay datos disponibles
+	jz .no_data
+	
+	in al, 0x60              ; Leer scancode del data port
+	ret
 
-.has_data:
-in al, 0x60 ; posicion donde esta el data port del teclado en i/o
-ret
+.no_data:
+	xor rax, rax             ; Retornar 0 si no hay datos
+	ret
 
-; es void esta func
+; void _outbyte(uint16_t port, uint8_t value)
+; rdi = port, sil = value
 _outbyte:
-push rdx ; guardo lo que tenia rdx antes
+	mov dx, di
+	mov al, sil
+	out dx, al
+	ret
 
-mov dx, di
-mov al, sil
-out dx, al
-
-pop rdx
-ret
-
-; devuelve 8 bits (uint8_t) 
+; uint8_t _inbyte(uint16_t port)
+; rdi = port, retorna en al
 _inbyte:
-push rdx ; guardo lo que tenia rdx antes
+	mov dx, di
+	in al, dx
+	ret
 
-mov dx, di
-in al, dx
-
-pop rdx
-ret
-
-
+_readTime:
+	push rdx
+	
+	; Seleccionar registro del RTC
+	mov dx, 0x70
+	mov al, dil
+	or al, 0x80              ; Deshabilitar NMI durante la lectura
+	out dx, al
+	
+	; Delay para que el hardware del RTC procese
+	jmp short $+2
+	jmp short $+2            ; Doble delay para mayor seguridad
+	
+	; Leer valor del RTC
+	xor eax, eax
+	mov dx, 0x71
+	in al, dx
+	
+	pop rdx
+	ret
 
 ; reserva para mandar copia de los registros 
 section .bss

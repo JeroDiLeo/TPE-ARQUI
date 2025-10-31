@@ -18,7 +18,7 @@ GLOBAL _getSnapshot
 EXTERN syscallHandler
 EXTERN exceptionHandler
 EXTERN getStackBase
-EXTERN irqHandler
+EXTERN irqDispatcher ;estaba como irqHandler
 EXTERN keyboard_check
 
 
@@ -180,7 +180,8 @@ picSlaveMask:
 	mov rsi, rsp ; pasaje del "vector" de registros
 	mov rdi, %1 ; pasaje de parametro
 
-	call irqHandler
+    ; estaba como irqHandler, lo cambiamos por irqDispatcher
+	call irqDispatcher
 
 	; signal pic EOI (End of Interrupt)
 	; mov al, PIC_EOI

@@ -1,4 +1,5 @@
 #include <SysCall_Lib.h>
+#include <videoDriver.h>
 #include <interrupts.h>
 #include <lib.h>
 
@@ -69,6 +70,7 @@ void dumpRegisters(void) {
     char buffer[17];
 
     for(int i = 0; i < regsAmount; i++) {
+        //Convierte el valor del registro a hexadecimal (esta funcion iria en el userland lib.c)
         itoaHex(regs[i], buffer);
         // Agrega padding
         int pad=16 - strlen(buffer);
