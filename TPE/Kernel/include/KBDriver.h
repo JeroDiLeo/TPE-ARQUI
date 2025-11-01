@@ -36,7 +36,7 @@
 
 // Funciones
 void keyboard_check();
-char keyboard_getchar();
+char kb_getchar();
 void updateReg();
 int getRegisters(uint64_t * r);
 

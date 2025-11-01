@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "include/SysCall_Lib.h"
+#include "SysCall_Lib.h"
 
 uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, uint64_t r8, uint64_t rax) {
     if(rax < 0 || rax > SYS_GETBGCOLOR){
@@ -18,7 +18,6 @@ uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, 
         case SYS_SETSCALE: return sys_setFontScale(rdi);
         case SYS_GETREGS: return sys_getRegisters((uint64_t *) rdi);
         case SYS_SLEEP: return sys_sleep(rdi);
-        case SYS_PLAYSOUND: return sys_playSound(rdi, rsi);
         case SYS_PLAYSOUND: return sys_playSound(rdi, rsi);
         case SYS_GETBGCOLOR : return sys_getBgColor();
         default: return 0;

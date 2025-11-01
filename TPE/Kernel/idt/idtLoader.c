@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <idtLoader.h>
+#include "idtLoader.h"
 #include <defs.h>
 #include <interrupts.h>
 
@@ -27,6 +27,19 @@ typedef struct {
 DESCR_INT * idt = (DESCR_INT *) 0;	// IDT de 255 entradas comenzando en la posicion 0
 
 
+
+// no se porque era static esto, y me tiraba warning en que no era static
+ static void setup_IDT_entry (int index, uint64_t offset) {
+    idt[index].selector = 0x08;
+    idt[index].offset_l = offset & 0xFFFF;
+    idt[index].offset_m = (offset >> 16) & 0xFFFF;
+    idt[index].offset_h = (offset >> 32) & 0xFFFFFFFF;
+    idt[index].access = ACS_INT;
+    idt[index].cero = 0;
+    idt[index].other_cero = (uint64_t) 0;
+}
+
+
 void load_idt() {
     _cli(); // Deshabilito las interrupciones durante la configuracion del IDT
     
@@ -48,14 +61,4 @@ void load_idt() {
 
     
     _sti();//Habilito todas las interrupciones
-}
-
-static void setup_IDT_entry (int index, uint64_t offset) {
-    idt[index].selector = 0x08;
-    idt[index].offset_l = offset & 0xFFFF;
-    idt[index].offset_m = (offset >> 16) & 0xFFFF;
-    idt[index].offset_h = (offset >> 32) & 0xFFFFFFFF;
-    idt[index].access = ACS_INT;
-    idt[index].cero = 0;
-    idt[index].other_cero = (uint64_t) 0;
 }

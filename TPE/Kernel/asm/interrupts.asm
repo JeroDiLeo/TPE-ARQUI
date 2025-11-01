@@ -12,6 +12,7 @@ GLOBAL exception_invalidOpCode
 GLOBAL interrupt_timerTick
 GLOBAL interrupt_keyboard
 GLOBAL interrupt_syscall
+GLOBAL interrupt_exit
 
 GLOBAL _getSnapshot
 
@@ -108,23 +109,23 @@ SECTION .text
     ; Verificar si vino de userland para capturar RSP/SS correctamente
     mov rbx, [rsp + 8]         ; CS
     test bl, 3                 ; ¿CPL = 3? (userland)
-    jz .from_kernel_snapshot   ; Si es 0, vino del kernel
+    jz %%from_kernel_snapshot   ; Si es 0, vino del kernel (iba $)
 
     ; Desde userland: CPU pusheo SS y RSP
     mov rax, [rsp + 24]        ; RSP de usuario
     mov [regs +16*8], rax
     mov rax, [rsp + 32]        ; SS de usuario
     mov [regs +19*8], rax
-    jmp .snapshot_done
+    jmp %%snapshot_done
 
-.from_kernel_snapshot:
+%%from_kernel_snapshot:
     ; Desde kernel: usar RSP actual (antes del push del marco)
     lea rax, [rsp + 40]        ; RSP antes del marco de interrupción (5 qwords)
     mov [regs +16*8], rax
     mov rax, 0x10              ; SS del kernel (típicamente segmento 0x10)
     mov [regs +19*8], rax
 
-.snapshot_done:
+%%snapshot_done:
 
 %endmacro
 
@@ -146,7 +147,7 @@ _getSnapshot:
     ; Primero verificar origen ANTES de fillSnapshot (por si acaso)
     mov  rax, [rsp + 8]         ; CS del marco de interrupción
     test al, 3                  ; ¿CPL = 3? (userland)
-    jz   .kernel_exception      ; Si es 0, vino del kernel -> panic
+    jz   %%kernel_exception    ; Si es 0, vino del kernel -> panic
 
     ; === EXCEPCIÓN DESDE USERLAND ===
     fillSnapshot                ; Captura estado completo
@@ -160,7 +161,7 @@ _getSnapshot:
     mov  [rsp + 0],  rax
     iretq                       ; Retornar a shell con stack limpio
 
-.kernel_exception:
+%%kernel_exception:
     ; === EXCEPCIÓN DESDE KERNEL ===
     ; El kernel no debería fallar. Si falla, el sistema está corrupto.
     fillSnapshot                ; Captura lo que se pueda
@@ -173,10 +174,10 @@ _getSnapshot:
     cli                         ; Deshabilitar interrupciones
     hlt                         ; Detener CPU
     ; Por si acaso hlt retorna (NMI, SMI, etc):
-.hang_forever:
+%%hang_forever:
     cli
     hlt
-    jmp .hang_forever
+    jmp %%hang_forever
 %endmacro
 
 _cli:
@@ -265,6 +266,17 @@ interrupt_syscall:      ;(INT 0X80)
     call syscallHandler
     CTX_RESTORE 0               ; deja RAX con el valor de retorno
     iretq
+
+; ===========================
+;           EXIT 
+; ===========================
+
+interrupt_exit:         ;(INT 0X81) - Terminar proceso y volver a shell
+    call getStackBase           ; RAX = RSP de usuario limpio
+    mov  [rsp + 24], rax        ; RSP de retorno (posición en el marco de interrupción)
+    mov  rax, userland          ; RIP de retorno (entry shell en 0x400000)
+    mov  [rsp + 0],  rax        ; Sobrescribir RIP en el marco
+    iretq                       ; Retornar a shell con stack limpio
 
 
 SECTION .bss

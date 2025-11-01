@@ -4,7 +4,7 @@
 #include <moduleLoader.h>
 #include <naiveConsole.h>
 #include "interrupts.h"
-#include "idtloader.h"
+#include "idtLoader.h"
 
 
 extern uint8_t text;

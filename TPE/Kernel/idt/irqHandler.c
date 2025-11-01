@@ -1,5 +1,5 @@
-#include "../include/time.h"
-#include "../include/KBDriver.h"
+#include "time.h"
+#include "KBDriver.h"
 
 #define PIC1_CMD   0x20
 #define PIC1_DATA  0x21

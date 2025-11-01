@@ -43,7 +43,7 @@
 // Estructura de comando
 typedef struct {
     const char *name;
-    void (*handler)(int argc, char **argv);
+    int (*handler)(int argc, char **argv);
     const char *description;
     const char *usage;
 } Command;
@@ -63,11 +63,7 @@ static int cmd_tron(int argc, char **argv);
 static int cmd_beep(int argc, char **argv);
 
 // Funciones auxiliares de shell
-static void shell_loop(void);
 static void print_prompt(void);
-static void get_input_and_print(char *input);
-static void print_cursor(uint32_t hexColor, uint64_t offsetX);
-static int no_screen_space(void);
 static void parse_and_execute(char *input);
 static int tokenize(char *input, char **argv, int max_args);
 static const Command *find_command(const char *name);
@@ -170,7 +166,7 @@ static int cmd_inforeg(int argc, char **argv) {
     
     if (result == 0) {
         puts("No hay registros capturados. Presione Ctrl+R para capturar el estado actual.\n", ERROR_COLOR);
-        return;
+        return 0;
     }
     
     // Nombres de los registros (orden consistente con libasm.asm _updateReg)
@@ -247,11 +243,19 @@ static int cmd_invopcode(int argc, char **argv) {
 static int cmd_exit(int argc, char **argv) {
     puts("Saliendo de la shell...\n", INFO_COLOR);
     puts("Hasta luego!\n", COLOR_CYAN);
-    // En un sistema real, aquí deberíamos hacer sys_exit()
-    // Por ahora, simplemente loop infinito detenido
+    // Loop infinito con halt para detener ejecución
     while(1) {
-        _hlt();
+        __asm__ volatile ("hlt");
     }
+    return 0;
+}
+
+static int cmd_tron(int argc, char **argv) {
+    puts("Iniciando juego Tron...\n", INFO_COLOR);
+    tron_game();
+    // Limpiar pantalla al volver
+    sys_clear_screen();
+    puts("Juego terminado. Bienvenido de vuelta a la shell.\n", COLOR_CYAN);
     return 0;
 }
 
@@ -293,7 +297,6 @@ static int cmd_beep(int argc, char **argv) {
 
 static char input_buffer[MAX_COMMAND_LENGTH];
 static char *argv_array[MAX_ARGS];
-static char *username = "user";
 
 // Prototipos de funciones auxiliares
 static void print_prompt(void);
@@ -305,7 +308,7 @@ static const Command *find_command(const char *name);
 /**
  * @brief Punto de entrada de la shell
  */
-int main(void) {
+int shell_main(void) {
     sys_clear_screen();
     
     // Banner de bienvenida

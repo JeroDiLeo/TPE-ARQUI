@@ -3,8 +3,8 @@
  * @brief Funciones de I/O y memoria
  */
 
-#include "includes/io_utils.h"
-#include "includes/syscalls.h"
+#include "io_utils.h"
+#include "syscalls.h"
 #include <stdarg.h>
 
 // File descriptors
@@ -74,79 +74,79 @@ int isDigit(char c){
  * @return Cantidad de caracteres impresos
  */
 int printf(const char *format, ...) {
-    va_list arguments;
-    va_start(arguments, format);
+    // va_list arguments;
+    // va_start(arguments, format);
     
-    char conversion_buffer[CONVERSION_BUFFER_SIZE];
-    int printed_chars = 0;
-    int format_index = 0;
+    // char conversion_buffer[CONVERSION_BUFFER_SIZE];
+    // int printed_chars = 0;
+    // int format_index = 0;
     
-    while (format[format_index] != '\0') {
-        // Si encontramos '%', procesar formato especial
-        if (format[format_index] == '%' && format[format_index + 1] != '\0') {
-            format_index++; // Avanzar al especificador
+    // while (format[format_index] != '\0') {
+    //     // Si encontramos '%', procesar formato especial
+    //     if (format[format_index] == '%' && format[format_index + 1] != '\0') {
+    //         format_index++; // Avanzar al especificador
             
-            switch (format[format_index]) {
-                case 's': {
-                    // Imprimir string
-                    const char *string_arg = va_arg(arguments, const char *);
-                    puts(string_arg, COLOR_WHITE);
-                    printed_chars += strlen(string_arg);
-                    break;
-                }
+    //         switch (format[format_index]) {
+    //             case 's': {
+    //                 // Imprimir string
+    //                 const char *string_arg = va_arg(arguments, const char *);
+    //                 puts(string_arg, COLOR_WHITE);
+    //                 printed_chars += strlen(string_arg);
+    //                 break;
+    //             }
                 
-                case 'd': {
-                    // Imprimir entero decimal
-                    int decimal_number = va_arg(arguments, int);
-                    itoa(decimal_number, conversion_buffer, 10);
-                    puts(conversion_buffer, COLOR_WHITE);
-                    printed_chars += strlen(conversion_buffer);
-                    break;
-                }
+    //             case 'd': {
+    //                 // Imprimir entero decimal
+    //                 int decimal_number = va_arg(arguments, int);
+    //                 itoa(decimal_number, conversion_buffer, 10);
+    //                 puts(conversion_buffer, COLOR_WHITE);
+    //                 printed_chars += strlen(conversion_buffer);
+    //                 break;
+    //             }
                 
-                case 'c': {
-                    // Imprimir carácter
-                    char character = (char)va_arg(arguments, int);
-                    putcharColor(character, COLOR_WHITE);
-                    printed_chars++;
-                    break;
-                }
+    //             case 'c': {
+    //                 // Imprimir carácter
+    //                 char character = (char)va_arg(arguments, int);
+    //                 putcharColor(character, COLOR_WHITE);
+    //                 printed_chars++;
+    //                 break;
+    //             }
                 
-                case 'x': {
-                    // Imprimir hexadecimal
-                    uint64_t hex_number = va_arg(arguments, uint64_t);
-                    itoa_hex(hex_number, conversion_buffer);
-                    puts(conversion_buffer, COLOR_WHITE);
-                    printed_chars += strlen(conversion_buffer);
-                    break;
-                }
+    //             case 'x': {
+    //                 // Imprimir hexadecimal
+    //                 uint64_t hex_number = va_arg(arguments, uint64_t);
+    //                 itoa_hex(hex_number, conversion_buffer);
+    //                 puts(conversion_buffer, COLOR_WHITE);
+    //                 printed_chars += strlen(conversion_buffer);
+    //                 break;
+    //             }
                 
-                case '%': {
-                    // Imprimir '%' literal
-                    putcharColor('%', COLOR_WHITE);
-                    printed_chars++;
-                    break;
-                }
+    //             case '%': {
+    //                 // Imprimir '%' literal
+    //                 putcharColor('%', COLOR_WHITE);
+    //                 printed_chars++;
+    //                 break;
+    //             }
                 
-                default: {
-                    // Formato no reconocido, imprimir '%' y el carácter
-                    putcharColor('%', COLOR_WHITE);
-                    putcharColor(format[format_index], COLOR_WHITE);
-                    printed_chars += 2;
-                    break;
-                }
-            }
-        } else {
-            // Carácter normal, imprimir directamente
-            putcharColor(format[format_index], COLOR_WHITE);
-            printed_chars++;
-        }
+    //             default: {
+    //                 // Formato no reconocido, imprimir '%' y el carácter
+    //                 putcharColor('%', COLOR_WHITE);
+    //                 putcharColor(format[format_index], COLOR_WHITE);
+    //                 printed_chars += 2;
+    //                 break;
+    //             }
+    //         }
+    //     } else {
+    //         // Carácter normal, imprimir directamente
+    //         putcharColor(format[format_index], COLOR_WHITE);
+    //         printed_chars++;
+    //     }
         
-        format_index++;
-    }
+    //     format_index++;
+    // }
     
-    va_end(arguments);
-    return printed_chars;
+    // va_end(arguments);
+    // return printed_chars;
 }
 //===================================================================
 
@@ -172,40 +172,40 @@ int printf(const char *format, ...) {
  * @return Cantidad de caracteres leídos (sin contar \0)
  */
 int read_line(char *buffer, int max_length) {
-    int i = 0;
-    char c;
+    // int i = 0;
+    // char c;
     
-    while (i < max_length - 1) {
-        int bytes = sys_read(STDIN, &c, 1);
+    // while (i < max_length - 1) {
+    //     int bytes = sys_read(STDIN, &c, 1);
         
-        if (bytes <= 0) {
-            continue;  // No hay entrada disponible
-        }
+    //     if (bytes <= 0) {
+    //         continue;  // No hay entrada disponible
+    //     }
         
-        // Enter: terminar línea
-        if (c == '\n') {
-            putchar('\n', COLOR_WHITE);
-            break;
-        }
+    //     // Enter: terminar línea
+    //     if (c == '\n') {
+    //         putchar('\n', COLOR_WHITE);
+    //         break;
+    //     }
         
-        // Backspace: borrar carácter
-        if (c == '\b') {
-            if (i > 0) {
-                i--;
-                putcharColor('\b', COLOR_WHITE);  // El driver de video maneja el backspace
-            }
-            continue;
-        }
+    //     // Backspace: borrar carácter
+    //     if (c == '\b') {
+    //         if (i > 0) {
+    //             i--;
+    //             putcharColor('\b', COLOR_WHITE);  // El driver de video maneja el backspace
+    //         }
+    //         continue;
+    //     }
         
-        // Carácter imprimible: agregar y hacer echo
-        if (c >= 32 && c <= 126) {
-            buffer[i++] = c;
-            putcharColor(c, COLOR_WHITE);
-        }
-    }
+    //     // Carácter imprimible: agregar y hacer echo
+    //     if (c >= 32 && c <= 126) {
+    //         buffer[i++] = c;
+    //         putcharColor(c, COLOR_WHITE);
+    //     }
+    // }
     
-    buffer[i] = '\0';
-    return i;
+    // buffer[i] = '\0';
+    // return i;
 }
 
 // ============== CONVERSION FUNCTIONS ==============

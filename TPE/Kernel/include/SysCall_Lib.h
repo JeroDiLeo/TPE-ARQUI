@@ -38,37 +38,39 @@ typedef enum {
     SYS_SETSCALE,
     SYS_GETREGS,
     SYS_SLEEP,
-    SYS_PLAYSOUND   
+    SYS_PLAYSOUND,
+    SYS_SETBGCOLOR,
+    SYS_GETBGCOLOR, 
 } SysCallID;
 
 // int size en vez de uint64_t para los syscalls de read y write
-int64_t sys_read(int fd, char * buffer, uint64_t size);
+uint64_t sys_read(int fd, char * buffer, uint64_t size);
 
-int64_t sys_write(int fd, const char * buffer, uint64_t size, uint64_t color);
+uint64_t sys_write(int fd, const char * buffer, uint64_t size, uint64_t color);
 
-int64_t sys_drawRectangle(uint32_t hexColor, uint64_t x, uint64_t y, uint64_t width, uint64_t height);
+uint64_t sys_drawRectangle(uint32_t hexColor, uint64_t x, uint64_t y, uint64_t width, uint64_t height);
 
-int64_t sys_getCords();
+uint64_t sys_getCoords();
 
-int64_t sys_clearScreen();
+uint64_t sys_clearScreen();
 
-int64_t sys_getScreenInfo();
+uint64_t sys_getScreenInfo();
 
-int64_t sys_getFontInfo();
+uint64_t sys_getFontInfo();
 
-int64_t sys_getTime(uint64_t arg);
+uint64_t sys_getTime(uint64_t arg);
 
-int64_t sys_setFontScale(uint64_t newScale);
+uint64_t sys_setFontScale(uint64_t newScale);
 
-int64_t sys_getRegisters(uint64_t * regs);
+uint64_t sys_getRegisters(uint64_t * regs);
 
-int64_t sys_sleep(uint64_t milisegundos);
+uint64_t sys_sleep(uint64_t milisegundos);
 
-int64_t sys_playSound(uint64_t f, uint64_t milisegundos);
+uint64_t sys_playSound(uint64_t f, uint64_t milisegundos);
 
-int64_t sys_setBgColor(uint32_t newColor);
+uint64_t sys_setBgColor(uint32_t newColor);
 
-int64_t sys_getBgColor();
+uint64_t sys_getBgColor();
 
 
 #endif

@@ -1,5 +1,5 @@
-#include "include/KBDriver.h"
-#include "include/SysCall_Lib.h"
+#include "KBDriver.h"
+#include "SysCall_Lib.h"
 #include <stddef.h>
 
 extern uint8_t _getKeyScan();
@@ -45,9 +45,9 @@ static Tbuffer buffer = {
 };
 
 //Flags para teclas especiales
-static char ShiftOn = 0;
-static char CapsOn = 0;
-static char CtrlOn = 0;
+static int ShiftOn = 0;
+static int CapsOn = 0;
+static int CtrlOn = 0;
 static char fullRegisters = 0;
 static uint64_t registers[TOTAL_REGS];
 
@@ -66,12 +66,12 @@ void keyboard_check(){
     bufferPush(asciiCode);
 }
 
-char keyboard_getchar(){
+char kb_getchar(){
     return bufferPop();
 }
 
 static char bufferPop(){
-    if(bufferEmpty){
+    if(bufferEmpty()){
         return 0;
     }
 

@@ -7,6 +7,7 @@ GLOBAL exception_divideByZero
 GLOBAL exception_invalidOpCode
 GLOBAL _inbyte
 GLOBAL _outbyte
+GLOBAL _readTime
 
 extern exceptionHandler
 

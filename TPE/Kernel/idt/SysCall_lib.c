@@ -1,16 +1,17 @@
-#include "include/SysCall_Lib.h"
-#include "include/interrupts.h"
+#include "SysCall_Lib.h"
+#include "interrupts.h"
 #include "videoDriver.h"
 #include "KBDriver.h"
 #include "audioDriver.h"
 #include "font.h"
 #include "time.h"
+#include "RealTimeClock.h"
 
 #define STDIN 0
 #define STDOUT 1
 #define STDERR 2
 
-#define TAB 4
+#define SYS_TAB 4
 
 #define WHITE 0x00FFFFFF
 #define BLACK 0x00000000
@@ -23,7 +24,7 @@ uint32_t bgColor = DEFAULT_BG_COLOR;
 static int printSpecialChars(char c);
 static void scrollScreen(void);
 
-int64_t sys_read(uint64_t fd, char * buffer, uint64_t size) {
+uint64_t sys_read(int fd, char * buffer, uint64_t size) {
     if(fd != STDIN){
         return -1;  // fd inválido
     }
@@ -60,7 +61,7 @@ static void scrollScreen(void) {
     
     // Copiar framebuffer: desplazar (totalLines-1) líneas hacia arriba
     for(uint16_t line = 1; line < totalLines; line++) {
-        uint16_t srcY = line * fontHeight;
+        //uint16_t srcY = line * fontHeight;
         uint16_t dstY = (line - 1) * fontHeight;
         
         // Por cada línea, copiar todos los píxeles
@@ -82,7 +83,7 @@ static void scrollScreen(void) {
     position_y = (totalLines - 1) * fontHeight;
 }
 
-int64_t sys_write(uint64_t fd,const char * buffer, uint64_t size, uint64_t color){
+uint64_t sys_write(int fd,const char * buffer, uint64_t size, uint64_t color){
     if(fd != STDOUT && fd != STDERR) {
         return -1;  // fd inválido
     }
@@ -122,11 +123,11 @@ static int printSpecialChars(char c){
             position_y += height * scale;
             return 1;
         case '\t' :
-            // Calcular próximo tab stop (múltiplo de TAB = 4 espacios)
+            // Calcular próximo tab stop (múltiplo de SYS_TAB = 4 espacios)
             {
                 uint16_t charsPerLine = getScreenWidth() / (width * scale);
                 uint16_t currentCol = position_x / (width * scale);
-                uint16_t nextTabCol = ((currentCol / TAB) + 1) * TAB;
+                uint16_t nextTabCol = ((currentCol / SYS_TAB) + 1) * SYS_TAB;
                 
                 if(nextTabCol < charsPerLine) {
                     position_x = nextTabCol * width * scale;
@@ -154,42 +155,42 @@ static int printSpecialChars(char c){
     }
 }
 
-int64_t sys_drawRectangle(uint32_t hexColor, uint64_t x, uint64_t y, uint64_t width, uint64_t height){
+uint64_t sys_drawRectangle(uint32_t hexColor, uint64_t x, uint64_t y, uint64_t width, uint64_t height){
     return drawRectangle(hexColor, x, y, width, height);
 }
 
-int64_t sys_getCords(){
+uint64_t sys_getCoords(){
     return ((uint64_t) position_y << 32) | position_x;
 }
 
-int64_t sys_clearScreen(){
+uint64_t sys_clearScreen(){
     drawRectangle(bgColor, 0, 0, getScreenWidth(), getScreenHeight());
     position_x = 0;
     position_y = 0;
     return 0;
 }
 
-int64_t sys_getScreenInfo(){
+uint64_t sys_getScreenInfo(){
     // Empaqueta: width en 32 bits altos, height en 32 bits bajos
     return ((uint64_t) getScreenWidth() << 32) | getScreenHeight();
 }
 
-int64_t sys_getFontInfo(){
+uint64_t sys_getFontInfo(){
     // Empaqueta: width en 32 bits altos, height en 32 bits bajos (escalados)
     return ((uint64_t) (getFontWidth() * getScale()) << 32) | (getFontHeight() * getScale());
 }
 
-int64_t sys_getTime(uint64_t arg){
+uint64_t sys_getTime(uint64_t arg){
     return getTime(arg);
 }
 
-int64_t sys_setFontScale(uint64_t newScale){
+uint64_t sys_setFontScale(uint64_t newScale){
     // setScale devuelve 1 si OK, 0 si fuera de rango
     int result = setScale(newScale);
     return result ? 0 : -1;  // Retornar 0 en éxito, -1 en error
 }
 
-int64_t sys_getRegisters(uint64_t * regs){
+uint64_t sys_getRegisters(uint64_t * regs){
     if(regs == NULL) {
         return -1;  // Puntero inválido
     }
@@ -198,7 +199,7 @@ int64_t sys_getRegisters(uint64_t * regs){
     return result ? 0 : -1;  // 0 en éxito, -1 si no hay snapshot disponible
 }
 
-int64_t sys_sleep(uint64_t milisegundos){
+uint64_t sys_sleep(uint64_t milisegundos){
     unsigned long long initialTime = ms_elapsed();
     unsigned long long currentTime = initialTime;
     
@@ -216,18 +217,18 @@ int64_t sys_sleep(uint64_t milisegundos){
     return 1;
 }
 
-int64_t sys_playSound(uint64_t f, uint64_t milisegundos){
+uint64_t sys_playSound(uint64_t f, uint64_t milisegundos){
     playSound(f);
     sys_sleep(milisegundos);
     stopSound();
     return 1;
 }
 
-int64_t sys_setBgColor(uint32_t newColor){
+uint64_t sys_setBgColor(uint32_t newColor){
     bgColor = newColor;
     return 1;
 }
 
-int64_t sys_getBgColor(){
+uint64_t sys_getBgColor(){
     return bgColor;
 }

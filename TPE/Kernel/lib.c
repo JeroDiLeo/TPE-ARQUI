@@ -55,3 +55,29 @@ int strlen(const char *str) {
     }
     return len;
 }
+
+void itoaHex(uint64_t num, char *buffer) {
+    const char hexDigits[] = "0123456789ABCDEF";
+    int i = 0;
+    
+    // Handle the case when num is 0
+    if (num == 0) {
+        buffer[i++] = '0';
+        buffer[i] = '\0';
+        return;
+    }
+    
+    // Convert number to hex (in reverse order)
+    char temp[17]; // 16 hex digits + null terminator
+    int j = 0;
+    while (num > 0) {
+        temp[j++] = hexDigits[num % 16];
+        num /= 16;
+    }
+    
+    // Reverse the string
+    for (int k = j - 1; k >= 0; k--) {
+        buffer[i++] = temp[k];
+    }
+    buffer[i] = '\0';
+}
