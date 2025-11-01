@@ -201,6 +201,8 @@ static int cmd_inforeg(int argc, char **argv) {
     if (TOTAL_REGS % 2 == 1) {
         printf("\n");
     }
+    
+    return 0;  // Agregar return faltante
 }
 
 static int cmd_clear(int argc, char **argv) {
@@ -355,7 +357,7 @@ static void parse_and_execute(char *input) {
         return;
     }
     
-    // Ejecutar handler
+    // Ejecutar handletokenizer
     cmd->handler(argc, argv_array);
 }
 
