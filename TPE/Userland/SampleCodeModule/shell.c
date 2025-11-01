@@ -5,7 +5,8 @@
  */
 
 #include "includes/syscalls.h"
-#include "includes/lib.h"
+#include "includes/io_utils.h"
+#include "includes/string_utils.h"
 #include "includes/tron.h"
 
 // ============== CONSTANTES ==============
@@ -50,16 +51,16 @@ typedef struct {
 // ============== FORWARD DECLARATIONS ==============
 
 // Comandos
-static void cmd_help(int argc, char **argv);
-static void cmd_time(int argc, char **argv);
-static void cmd_inforeg(int argc, char **argv);
-static void cmd_clear(int argc, char **argv);
-static void cmd_scale(int argc, char **argv);
-static void cmd_divzero(int argc, char **argv);
-static void cmd_invopcode(int argc, char **argv);
-static void cmd_printmem(int argc, char **argv);
-static void cmd_tron(int argc, char **argv);
-static void cmd_beep(int argc, char **argv);
+static int cmd_help(int argc, char **argv);
+static int cmd_time(int argc, char **argv);
+static int cmd_inforeg(int argc, char **argv);
+static int cmd_clear(int argc, char **argv);
+static int cmd_scale(int argc, char **argv);
+static int cmd_divzero(int argc, char **argv);
+static int cmd_invopcode(int argc, char **argv);
+static int cmd_exit(int argc, char **argv);
+static int cmd_tron(int argc, char **argv);
+static int cmd_beep(int argc, char **argv);
 
 // Funciones auxiliares de shell
 static void shell_loop(void);
@@ -117,10 +118,10 @@ static const Command commands[MAXCMD] = {
         .usage = "invopcode"
     },
     {
-        .name = "printmem",
-        .handler = cmd_printmem,
-        .description = "Imprime 32 bytes desde dirección de memoria",
-        .usage = "printmem <address>"
+        .name = "exit",
+        .handler = cmd_exit,
+        .description = "Sale de la shell",
+        .usage = "exit"
     },
     {
         .name = "tron",
@@ -136,6 +137,155 @@ static const Command commands[MAXCMD] = {
     },
 
 };
+//=====COMANDOS=======(Agregar un cmd de exit)
+static int cmd_help(int argc, char **argv) {
+    puts("Comandos disponibles:\n", INFO_COLOR);
+    for (int i = 0; i < MAXCMD; i++) {
+        if (commands[i].name != NULL) {
+            printf(" - %s: %s\n", commands[i].name, commands[i].description);
+        }
+    }
+    return 0;
+}
+
+static int cmd_time(int argc, char **argv) {    //(Hacer getter para el time)
+    uint64_t day = sys_get_time(0);
+    uint64_t month = sys_get_time(1);
+    uint64_t year = sys_get_time(2);
+    uint64_t hours = sys_get_time(3);
+    uint64_t minutes = sys_get_time(4);
+    uint64_t seconds = sys_get_time(5);
+    
+    printf("Fecha: %02d/%02d/20%02d\n", day, month, year);
+    printf("Hora: %02d:%02d:%02d\n", hours, minutes, seconds);
+    return 0;
+}
+
+static int cmd_inforeg(int argc, char **argv) {
+    #define TOTAL_REGS 17
+    uint64_t registers[TOTAL_REGS];
+    
+    // Obtener registros capturados
+    uint64_t result = sys_get_registers(registers);
+    
+    if (result == 0) {
+        puts("No hay registros capturados. Presione Ctrl+R para capturar el estado actual.\n", ERROR_COLOR);
+        return;
+    }
+    
+    // Nombres de los registros (orden consistente con libasm.asm _updateReg)
+    const char *register_names[TOTAL_REGS] = {
+        "RAX", "RBX", "RCX", "RDX",
+        "RSI", "RDI", "RBP", "R8 ",
+        "R9 ", "R10", "R11", "R12",
+        "R13", "R14", "R15", "RIP",
+        "RSP"
+    };
+    
+    puts("Estado de los registros (capturados con Ctrl+R):\n", INFO_COLOR);
+    puts("================================================\n", INFO_COLOR);
+    
+    // Imprimir registros en formato de 2 columnas
+    for (int i = 0; i < TOTAL_REGS; i++) {
+        printf("%s: %x", register_names[i], registers[i]);
+        
+        // Dos columnas, salto de línea cada 2 registros
+        if (i % 2 == 1) {
+            printf("\n");
+        } else {
+            printf("    ");  // Espaciado entre columnas
+        }
+    }
+    
+    // Si el total es impar, agregar salto de línea final
+    if (TOTAL_REGS % 2 == 1) {
+        printf("\n");
+    }
+}
+
+static int cmd_clear(int argc, char **argv) {
+    sys_clear_screen();
+    return 0;
+}
+
+static int cmd_scale(int argc, char **argv) {
+    if (argc != 2) {
+        puts("Uso: scale <1|2|3>\n", ERROR_COLOR);
+        return -1;
+    }
+    
+    int scale = atoi(argv[1]);
+    if (scale < 1 || scale > 3) {
+        puts("Error: Escala inválida. Debe ser 1, 2 o 3.\n", ERROR_COLOR);
+        return -1;
+    }
+    
+    sys_set_font_scale(scale);
+    printf("Escala de fuente cambiada a %d.\n", scale);
+    return 0;
+}
+//Estas dos son para REVISAR ademas desp del testearlas nose si son necesairas
+static int cmd_divzero(int argc, char **argv) {
+    puts("Provocando excepción de división por cero...\n", INFO_COLOR);
+    volatile int a = 1;
+    volatile int b = 0;
+    volatile int c = a / b;  // Esto debería causar la excepción
+    (void)c; // Evitar advertencia de variable no usada
+    return 0;
+}
+
+static int cmd_invopcode(int argc, char **argv) {
+    puts("Provocando excepción de opcode inválido...\n", INFO_COLOR);
+    __asm__ volatile (
+        ".byte 0x0F, 0x0B"  // Opcode inválido
+    );
+    return 0;
+}
+
+static int cmd_exit(int argc, char **argv) {
+    puts("Saliendo de la shell...\n", INFO_COLOR);
+    puts("Hasta luego!\n", COLOR_CYAN);
+    // En un sistema real, aquí deberíamos hacer sys_exit()
+    // Por ahora, simplemente loop infinito detenido
+    while(1) {
+        _hlt();
+    }
+    return 0;
+}
+
+static int cmd_beep(int argc, char **argv) {
+    if (argc != 3) {
+        puts("Uso: beep <frequency> <duration_ms>\n", ERROR_COLOR);
+        puts("Ejemplo: beep 440 500  (reproduce La4 por 500ms)\n", INFO_COLOR);
+        return -1;
+    }
+    
+    int frequency = atoi(argv[1]);
+    int duration = atoi(argv[2]);
+    
+    // Validar frecuencia (rango audible humano: 20Hz - 20000Hz)
+    if (frequency < 20 || frequency > 20000) {
+        puts("Error: Frecuencia inválida. Debe estar entre 20 y 20000 Hz.\n", ERROR_COLOR);
+        return -1;
+    }
+    
+    // Validar duración
+    if (duration < 1 || duration > 10000) {
+        puts("Error: Duración inválida. Debe estar entre 1 y 10000 ms.\n", ERROR_COLOR);
+        return -1;
+    }
+    
+    printf("Reproduciendo sonido: %d Hz por %d ms...\n", frequency, duration);
+    sys_play_sound(frequency, duration);
+    puts("Sonido reproducido!\n", COLOR_GREEN);
+    
+    return 0;
+}
+//===
+
+
+
+
 
 // ============== VARIABLES GLOBALES ==============
 
@@ -149,6 +299,7 @@ static void parse_and_execute(char *input);
 static int tokenize(char *input, char **argv, int max_args);
 static const Command *find_command(const char *name);
 
+//Esto del main va en la parte de loader
 /**
  * @brief Punto de entrada de la shell
  */
