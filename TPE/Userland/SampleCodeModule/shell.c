@@ -4,11 +4,11 @@
  * @date 2025
  */
 
-#include "includes/syscalls.h"
-#include "includes/io_utils.h"
-#include "includes/string_utils.h"
-#include "includes/tron.h"
-
+#include "syscalls.h"
+#include "io_utils.h"
+#include "string_utils.h"
+#include "tron.h"
+#include "shell.h"
 // ============== CONSTANTES ==============
 
 #define MAX_COMMAND_LENGTH 256

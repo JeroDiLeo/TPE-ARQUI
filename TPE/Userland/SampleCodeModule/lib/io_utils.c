@@ -172,40 +172,40 @@ int printf(const char *format, ...) {
  * @return Cantidad de caracteres leídos (sin contar \0)
  */
 int read_line(char *buffer, int max_length) {
-    // int i = 0;
-    // char c;
+    int i = 0;
+    char c;
     
-    // while (i < max_length - 1) {
-    //     int bytes = sys_read(STDIN, &c, 1);
+    while (i < max_length - 1) {
+        int bytes = sys_read(STDIN, &c, 1);
         
-    //     if (bytes <= 0) {
-    //         continue;  // No hay entrada disponible
-    //     }
+        if (bytes <= 0) {
+            continue;  // No hay entrada disponible
+        }
         
-    //     // Enter: terminar línea
-    //     if (c == '\n') {
-    //         putchar('\n', COLOR_WHITE);
-    //         break;
-    //     }
+        // Enter: terminar línea
+        if (c == '\n') {
+            putcharColor('\n', COLOR_WHITE);
+            break;
+        }
         
-    //     // Backspace: borrar carácter
-    //     if (c == '\b') {
-    //         if (i > 0) {
-    //             i--;
-    //             putcharColor('\b', COLOR_WHITE);  // El driver de video maneja el backspace
-    //         }
-    //         continue;
-    //     }
+        // Backspace: borrar carácter
+        if (c == '\b') {
+            if (i > 0) {
+                i--;
+                putcharColor('\b', COLOR_WHITE);  // El driver de video maneja el backspace
+            }
+            continue;
+        }
         
-    //     // Carácter imprimible: agregar y hacer echo
-    //     if (c >= 32 && c <= 126) {
-    //         buffer[i++] = c;
-    //         putcharColor(c, COLOR_WHITE);
-    //     }
-    // }
+        // Carácter imprimible: agregar y hacer echo
+        if (c >= 32 && c <= 126) {
+            buffer[i++] = c;
+            putcharColor(c, COLOR_WHITE);
+        }
+    }
     
-    // buffer[i] = '\0';
-    // return i;
+    buffer[i] = '\0';
+    return i;
 }
 
 // ============== CONVERSION FUNCTIONS ==============
