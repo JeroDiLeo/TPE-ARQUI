@@ -16,7 +16,8 @@ extern uint64_t _sys_setFontScale(uint64_t scale);
 extern uint64_t _sys_getRegisters(uint64_t *buffer);
 extern uint64_t _sys_sleep(uint64_t milliseconds);
 extern uint64_t _sys_playSound(uint64_t frequency, uint64_t duration);
-
+extern void _sys_exit(int exitCode) __attribute__((noreturn));
+ 
 // Wrappers con nombres más amigables
 #define sys_read(fd, buf, count) _sys_read(fd, buf, count)
 #define sys_write(fd, buf, count, color) _sys_write(fd, buf, count, color)
@@ -30,8 +31,11 @@ extern uint64_t _sys_playSound(uint64_t frequency, uint64_t duration);
 #define sys_get_registers(buffer) _sys_getRegisters(buffer)
 #define sys_sleep(ms) _sys_sleep(ms)
 #define sys_play_sound(freq, duration) _sys_playSound(freq, duration)
+#define sys_exit(code) _sys_exit(code)
 
 // Colores comunes
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
 #define COLOR_BLACK   0x000000
 #define COLOR_WHITE   0xFFFFFF
 #define COLOR_RED     0xFF0000

@@ -23,6 +23,8 @@ uint32_t bgColor = DEFAULT_BG_COLOR;
 
 static int printSpecialChars(char c);
 static void scrollScreen(void);
+static volatile int shouldExit = 0;
+static volatile int lastExitCode = 0;
 
 uint64_t sys_read(int fd, char * buffer, uint64_t size) {
     if(fd != STDIN){
@@ -231,4 +233,23 @@ uint64_t sys_setBgColor(uint32_t newColor){
 
 uint64_t sys_getBgColor(){
     return bgColor;
+}
+
+uint64_t sys_exit(int exitCode){
+    lastExitCode = exitCode;
+    shouldExit = 1;
+    return 0;
+}
+
+int checkShouldExit(void){
+    return shouldExit;
+}
+
+int getLastExitCode(void){
+    return lastExitCode;
+}
+
+void resetExitFlag(void){
+    shouldExit = 0;
+    lastExitCode = 0;
 }

@@ -41,6 +41,7 @@ typedef enum {
     SYS_PLAYSOUND,
     SYS_SETBGCOLOR,
     SYS_GETBGCOLOR, 
+    SYS_EXIT
 } SysCallID;
 
 // int size en vez de uint64_t para los syscalls de read y write
@@ -71,6 +72,15 @@ uint64_t sys_playSound(uint64_t f, uint64_t milisegundos);
 uint64_t sys_setBgColor(uint32_t newColor);
 
 uint64_t sys_getBgColor();
+
+uint64_t sys_exit(int exitCode);
+
+int checkShouldExit(void);
+
+int getLastExitCode(void);
+
+void resetExitFlag(void);
+
 
 
 #endif
