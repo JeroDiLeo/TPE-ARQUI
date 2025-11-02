@@ -85,19 +85,41 @@ void * initializeKernelBinary()
 
 int main()
 {
-	ncPrint("[Initializing system]");
-	ncNewline();
-	
-	// Load and configure IDT
-	ncPrint("  Loading IDT... ");
-	load_idt();
-	ncPrint("Done");
-	ncNewline();
-	
-	ncPrint("[Kernel Main]");
-	ncNewline();
-	
-	// Verify module is loaded correctly
+    // Clear screen at startup
+    ncClear();
+    
+    ncPrint("[Initializing system]");
+    ncNewline();
+    
+    // Load and configure IDT
+    ncPrint("  Loading IDT... ");
+    load_idt();
+    ncPrint("Done");
+    ncNewline();
+    
+    // Enable interrupts explicitly
+    ncPrint("  Enabling interrupts... ");
+    _sti();
+    ncPrint("Done");
+    ncNewline();
+    ncNewline();
+    
+    ncPrint("[Kernel Main]");
+    ncNewline();
+    
+    // Detailed module verification
+    ncPrint("  Checking module at 0x");
+    ncPrintHex((uint64_t)sampleCodeModuleAddress);
+    ncNewline();
+    
+    // Display first few bytes of the module
+    ncPrint("  Module header bytes: ");
+    unsigned char *moduleStart = (unsigned char *)sampleCodeModuleAddress;
+    for(int i = 0; i < 8; i++) {
+        ncPrintHex(moduleStart[i]);
+        ncPrint(" ");
+    }
+    ncNewline();
 	ncPrint("  Sample code module at 0x");
 	ncPrintHex((uint64_t)sampleCodeModuleAddress);
 	ncNewline();
@@ -124,6 +146,7 @@ int main()
 	ncPrint("  Sample data module contents: ");
 	ncPrint((char*)sampleDataModuleAddress);
 	ncNewline();
+	
 
 	ncPrint("[Finished]");
 	return ((EntryPoint)sampleCodeModuleAddress)();

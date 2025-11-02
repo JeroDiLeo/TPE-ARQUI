@@ -1,4 +1,4 @@
-GLOBAL _sys_write
+GLOBAL _sys_write,
 GLOBAL _sys_read
 GLOBAL _sys_drawRectangle
 GLOBAL _sys_clearScreen
@@ -11,9 +11,6 @@ GLOBAL _sys_setFontScale
 GLOBAL _sys_getRegisters
 GLOBAL _sys_sleep
 GLOBAL _sys_playSound
-GLOBAL _sys_setBgColor
-GLOBAL _sys_getBgColor
-GLOBAL _sys_exit
 
 
 section .text
@@ -37,6 +34,3 @@ _sys_setFontScale: syscall 0x08
 _sys_getRegisters: syscall 0x09
 _sys_sleep: syscall 0x0A
 _sys_playSound: syscall 0x0B
-_sys_setBgColor : syscall 0x0C
-_sys_getBgColor : syscall 0x0D
-_sys_exit : syscall 0x0E

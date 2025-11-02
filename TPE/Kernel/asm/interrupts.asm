@@ -8,6 +8,7 @@ GLOBAL picSlaveMask
 
 GLOBAL exception_divideByZero
 GLOBAL exception_invalidOpCode
+GLOBAL exception_pageFault
 
 GLOBAL interrupt_timerTick
 GLOBAL interrupt_keyboard
@@ -15,6 +16,7 @@ GLOBAL interrupt_syscall
 GLOBAL interrupt_exit
 
 GLOBAL _getSnapshot
+GLOBAL _readCR2
 
 EXTERN syscallHandler
 EXTERN exceptionHandler
@@ -134,6 +136,10 @@ _getSnapshot:
     mov rax, regs
     ret
 
+_readCR2:
+    mov rax, cr2
+    ret
+
 ;=======================
 ;    Exception Master
 ;=======================
@@ -248,6 +254,9 @@ exception_divideByZero:            ;(#DE = 0)
 exception_invalidOpCode:            ;(#UD = 6)
     exceptionHandlerMacro 6
 
+exception_pageFault:                ;(#PF = 14)
+    exceptionHandlerMacro 14
+
 ;===========================
 ;   Interrupts handlers
 ;===========================
@@ -262,7 +271,7 @@ interrupt_keyboard:     ;(IRQ1)
 
 interrupt_syscall:      ;(INT 0X80)
     CTX_SAVE 0                  ; NO guardar RAX
-    mov  rdi, rax               ; rdi = número de syscall (SysV arg#1)
+    mov  r9, rax                ; pasar número de syscall como 6to argumento (SysV usa R9)
     call syscallHandler
     CTX_RESTORE 0               ; deja RAX con el valor de retorno
     iretq
@@ -281,4 +290,3 @@ interrupt_exit:         ;(INT 0X81) - Terminar proceso y volver a shell
 
 SECTION .bss
 regs resq 20 ;Para fillSnapshot
-
