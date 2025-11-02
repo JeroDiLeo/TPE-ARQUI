@@ -85,15 +85,36 @@ void * initializeKernelBinary()
 
 int main()
 {
+	ncPrint("[Initializing system]");
+	ncNewline();
+	
+	// Load and configure IDT
+	ncPrint("  Loading IDT... ");
 	load_idt();
+	ncPrint("Done");
+	ncNewline();
 	
 	ncPrint("[Kernel Main]");
 	ncNewline();
+	
+	// Verify module is loaded correctly
 	ncPrint("  Sample code module at 0x");
 	ncPrintHex((uint64_t)sampleCodeModuleAddress);
 	ncNewline();
-	ncPrint("  Calling the sample code module returned: "); //llega hasta aca
-	ncPrintHex(((EntryPoint)sampleCodeModuleAddress)());
+	
+	// Check if module appears to be valid
+	ncPrint("  Checking sample code module... ");
+	if (*(uint64_t*)sampleCodeModuleAddress == 0) {
+		ncPrint("ERROR: Module appears to be empty\n");
+		return -1;
+	}
+	ncPrint("OK");
+	ncNewline();
+	
+	// Execute module
+	ncPrint("  Calling the sample code module returned: ");
+	int result = ((EntryPoint)sampleCodeModuleAddress)();
+	ncPrintHex(result);
 	ncNewline();
 	ncNewline();
 

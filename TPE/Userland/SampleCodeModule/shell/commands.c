@@ -9,11 +9,13 @@
 #include "string_utils.h"
 #include "tron.h"
 #include "shell.h"
+#include <inttypes.h>
+#include <stddef.h>
+#include "commands.h"
 // ============== CONSTANTES ==============
 
 #define MAX_COMMAND_LENGTH 256
 #define MAX_ARGS 10
-#define NULL ((void*)0)
 #define MAXCMD 10
 
 // File descriptors
@@ -41,7 +43,7 @@
 // ============== ESTRUCTURAS ==============
 
 // Estructura de comando
-typedef struct {
+typedef struct Tcommand{
     const char *name;
     int (*handler)(int argc, char **argv);
     const char *description;
@@ -63,10 +65,9 @@ static int cmd_tron(int argc, char **argv);
 static int cmd_beep(int argc, char **argv);
 
 // Funciones auxiliares de shell
-static void print_prompt(void);
-static void parse_and_execute(char *input);
 static int tokenize(char *input, char **argv, int max_args);
 static const Command *find_command(const char *name);
+
 
 // ============== TABLA DE COMANDOS ==============
 
@@ -136,7 +137,8 @@ static const Command commands[MAXCMD] = {
 //=====COMANDOS=======(Agregar un cmd de exit)
 static int cmd_help(int argc, char **argv) {
     puts("Comandos disponibles:\n", INFO_COLOR);
-    for (int i = 0; i < MAXCMD; i++) {
+    size_t cmd_count = sizeof(commands) / sizeof(commands[0]);
+    for (size_t i = 0; i < cmd_count; i++) {
         if (commands[i].name != NULL) {
             printf(" - %s: %s\n", commands[i].name, commands[i].description);
         }
@@ -152,8 +154,8 @@ static int cmd_time(int argc, char **argv) {    //(Hacer getter para el time)
     uint64_t minutes = sys_get_time(4);
     uint64_t seconds = sys_get_time(5);
     
-    printf("Fecha: %02d/%02d/20%02d\n", day, month, year);
-    printf("Hora: %02d:%02d:%02d\n", hours, minutes, seconds);
+    printf("Fecha: %02" PRIu64 "/%02" PRIu64 "/20%02" PRIu64 "\n", day, month, year);
+    printf("Hora: %02" PRIu64 ":%02" PRIu64 ":%02" PRIu64 "\n", hours, minutes, seconds);
     return 0;
 }
 
@@ -183,7 +185,7 @@ static int cmd_inforeg(int argc, char **argv) {
     
     // Imprimir registros en formato de 2 columnas
     for (int i = 0; i < TOTAL_REGS; i++) {
-        printf("%s: %x", register_names[i], registers[i]);
+        printf("%s: %016" PRIx64, register_names[i], registers[i]);
         
         // Dos columnas, salto de línea cada 2 registros
         if (i % 2 == 1) {
@@ -212,14 +214,21 @@ static int cmd_scale(int argc, char **argv) {
         return -1;
     }
     
-    int scale = atoi(argv[1]);
+    char *endptr;
+    long scale = strtol(argv[1], &endptr, 10);
+    
+    if (*endptr != '\0' || endptr == argv[1]) {
+        puts("Error: Escala debe ser un número entero.\n", ERROR_COLOR);
+        return -1;
+    }
+    
     if (scale < 1 || scale > 3) {
         puts("Error: Escala inválida. Debe ser 1, 2 o 3.\n", ERROR_COLOR);
         return -1;
     }
     
-    sys_set_font_scale(scale);
-    printf("Escala de fuente cambiada a %d.\n", scale);
+    sys_set_font_scale((int)scale);
+    printf("Escala de fuente cambiada a %d.\n", (int)scale);
     return 0;
 }
 //Estas dos son para REVISAR ademas desp del testearlas nose si son necesairas
@@ -266,8 +275,20 @@ static int cmd_beep(int argc, char **argv) {
         return -1;
     }
     
-    int frequency = atoi(argv[1]);
-    int duration = atoi(argv[2]);
+    char *endptr;
+    long frequency = strtol(argv[1], &endptr, 10);
+    
+    if (*endptr != '\0' || endptr == argv[1]) {
+        puts("Error: Frecuencia debe ser un número entero.\n", ERROR_COLOR);
+        return -1;
+    }
+    
+    long duration = strtol(argv[2], &endptr, 10);
+    
+    if (*endptr != '\0' || endptr == argv[2]) {
+        puts("Error: Duración debe ser un número entero.\n", ERROR_COLOR);
+        return -1;
+    }
     
     // Validar frecuencia (rango audible humano: 20Hz - 20000Hz)
     if (frequency < 20 || frequency > 20000) {
@@ -281,67 +302,20 @@ static int cmd_beep(int argc, char **argv) {
         return -1;
     }
     
-    printf("Reproduciendo sonido: %d Hz por %d ms...\n", frequency, duration);
-    sys_play_sound(frequency, duration);
-    puts("Sonido reproducido!\n", COLOR_GREEN);
+    printf("Reproduciendo sonido: %ld Hz por %ld ms...\n", frequency, duration);
+    sys_play_sound((int)frequency, (int)duration);
+    puts("Sonido reproducido!\n", INFO_COLOR);
     
     return 0;
 }
-//===
 
-
-
-
-
-// ============== VARIABLES GLOBALES ==============
-
-static char input_buffer[MAX_COMMAND_LENGTH];
+// Variable global para almacenar argumentos parseados
 static char *argv_array[MAX_ARGS];
-
-// Prototipos de funciones auxiliares
-static void print_prompt(void);
-static void parse_and_execute(char *input);
-static int tokenize(char *input, char **argv, int max_args);
-static const Command *find_command(const char *name);
-
-//Esto del main va en la parte de loader
-/**
- * @brief Punto de entrada de la shell
- */
-int shell_main(void) {
-    sys_clear_screen();
-    
-    // Banner de bienvenida
-    puts("╔════════════════════════════════════════╗\n", COLOR_CYAN);
-    puts("║       Bienvenido a JerOS Shell        ║\n", COLOR_CYAN);
-    puts("║       Arquitectura de Computadoras    ║\n", COLOR_CYAN);
-    puts("╚════════════════════════════════════════╝\n", COLOR_CYAN);
-    puts("\nEscriba 'help' para ver comandos disponibles\n", COLOR_WHITE);
-    
-    // Loop principal de la shell
-    while (1) {
-        print_prompt();
-        
-        int len = read_line(input_buffer, MAX_COMMAND_LENGTH);
-        if (len > 0) {
-            parse_and_execute(input_buffer);
-        }
-    }
-    
-    return 0;
-}
-
-/**
- * @brief Imprime el prompt de la shell
- */
-static void print_prompt(void) {
-    puts("\n$ ", PROMPT_COLOR);
-}
 
 /**
  * @brief Parsea y ejecuta un comando
  */
-static void parse_and_execute(char *input) {
+void parse_and_execute(char *input) {
     // Tokenizar entrada
     int argc = tokenize(input, argv_array, MAX_ARGS);
     
