@@ -5,29 +5,33 @@
 
 #define INVALID_OPCODE_EXCEPTION 6
 #define ZERO_EXCEPTION 0
+#define PAGE_FAULT_EXCEPTION 14
 
 #define BGCOLOR 0x00000000 // Black
 #define WHITE 0x00FFFFFF // White
 
 //Funcion asm que me guarde los registros en un array para el momento de la excepcion
 extern uint64_t * _getSnapshot();
+extern uint64_t _readCR2(void);
 
-static void launchExceptionScreen(char * msg);
+static void launchExceptionScreen(int exceptionType, const char * msg);
 static void dumpRegisters(void);
 
 //Maneja la excepcion segun su tipo
 void exceptionHandler(int exceptionType) {
-    char * msg;
+    char * msg = "Exception: Unknown\n";
     if(exceptionType == INVALID_OPCODE_EXCEPTION) {
         msg = "Exception: Invalid Opcode\n";
     } else if(exceptionType == ZERO_EXCEPTION) {
         msg = "Exception: Division by Zero\n";
+    } else if(exceptionType == PAGE_FAULT_EXCEPTION) {
+        msg = "Exception: Page Fault\n";
     }
-    launchExceptionScreen(msg);
+    launchExceptionScreen(exceptionType, msg);
 }
 
 //Muestra la pantalla de excepcion con el mensaje correspondiente
-void launchExceptionScreen(char * msg) {
+void launchExceptionScreen(int exceptionType, const char * msg) {
     //Guardo el estado visual actual(colores, escala)
     uint64_t oldBgColor = sys_getBgColor();
     uint8_t oldScale = getScale();
@@ -37,6 +41,19 @@ void launchExceptionScreen(char * msg) {
     setScale(2);
     sys_clearScreen();//Limpio la pantalla
     sys_write(1, msg, strlen(msg), WHITE);
+    if(exceptionType == PAGE_FAULT_EXCEPTION){
+        uint64_t faultAddr = _readCR2();
+        char addrBuffer[17];
+        itoaHex(faultAddr, addrBuffer);
+        sys_write(1, "Faulting address: 0x", 20, WHITE);
+        // padding leading zeros
+        int pad = 16 - strlen(addrBuffer);
+        for(int i = 0; i < pad; i++){
+            sys_write(1, "0", 1, WHITE);
+        }
+        sys_write(1, addrBuffer, strlen(addrBuffer), WHITE);
+        sys_write(1, "\n", 1, WHITE);
+    }
     dumpRegisters();
 
     char * NextMsg = "\nPress any key to relaunch shell...";

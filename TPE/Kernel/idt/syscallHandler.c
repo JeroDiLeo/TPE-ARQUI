@@ -1,15 +1,44 @@
 #include <stdint.h>
 #include "SysCall_Lib.h"
 
-uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, uint64_t r8, uint64_t r9) {
-    // r9 contiene el número de syscall (rax original)
-    uint64_t syscall_num = r9;
-    
-    if(syscall_num > SYS_EXIT){
+/* Define SYSCALL_DEBUG to re-enable verbose syscall tracing. */
+// #define SYSCALL_DEBUG
+
+uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, uint64_t r8, uint64_t rax) {
+#ifdef SYSCALL_DEBUG
+    ncPrint("SysCall - ");
+    ncPrint("NUM: ");
+    ncPrintHex(rax);
+    ncPrint(" | FD: ");
+    ncPrintHex(rdi);
+    ncPrint(" | BUF: ");
+    ncPrintHex(rsi);
+    ncPrint(" | LEN: ");
+    ncPrintHex(rdx);
+    ncPrint(" | COLOR: ");
+    ncPrintHex(rcx);
+    ncNewline();
+#endif
+
+    // Validar número de syscall
+    if(rax < 0 || rax > SYS_GETBGCOLOR) {
+        ncPrint("ERROR: Invalid syscall number\n");
         return -1;
     }
 
-    switch (syscall_num) {
+    // Validar parámetros para syscalls específicas
+    if(rax == SYS_WRITE) {
+        if(rsi == 0) {
+            ncPrint("ERROR: NULL buffer\n");
+            return -1;
+        }
+        if(rdx == 0) {
+            ncPrint("ERROR: Zero length\n");
+            return -1;
+        }
+    }
+
+    switch (rax) {
         case SYS_READ: return sys_read(rdi, (char *) rsi, rdx);
         case SYS_WRITE: return sys_write(rdi, (char *) rsi, rdx, rcx);
         case SYS_RECTANGLE: return sys_drawRectangle(rdi, rsi, rdx, rcx, r8);
@@ -22,9 +51,8 @@ uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, 
         case SYS_GETREGS: return sys_getRegisters((uint64_t *) rdi);
         case SYS_SLEEP: return sys_sleep(rdi);
         case SYS_PLAYSOUND: return sys_playSound(rdi, rsi);
-        case SYS_SETBGCOLOR: return sys_setBgColor((uint32_t)rdi);
-        case SYS_GETBGCOLOR: return sys_getBgColor();
-        case SYS_EXIT: return sys_exit((int)rdi);
-        default: return -1;
+        case SYS_GETBGCOLOR : return sys_getBgColor();
+        case SYS_EXIT : return sys_exit((int)rdi);
+        default: return 0;
     }
 }

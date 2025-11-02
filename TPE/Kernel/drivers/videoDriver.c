@@ -128,7 +128,8 @@ void drawChar(char c, uint32_t charColor, uint32_t bgColor, uint64_t x, uint64_t
 
     for(uint64_t i = 0; i < getFontHeight(); i++){
         for(uint64_t j = 0; j < getFontWidth(); j++){
-            if((charBitmap[i] >> (getFontWidth() - j - 1)) & 1){
+            // Changed bit extraction to read from left to right
+            if((charBitmap[i] >> j) & 1){
                 drawScaledPixel(charColor, x, y);
             } else{
                 drawScaledPixel(bgColor, x, y);
