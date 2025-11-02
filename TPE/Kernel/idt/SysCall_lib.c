@@ -33,10 +33,10 @@ uint64_t sys_read(int fd, char * buffer, uint64_t size) {
     
     for(uint64_t i = 0; i < size; i++){
         char c = kb_getchar();
-        buffer[i] = c;
         if(c == 0){
             return i;  // No hay más caracteres
         }
+        buffer[i] = c;
     }
     return size;
 }

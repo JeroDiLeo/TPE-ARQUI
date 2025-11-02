@@ -8,12 +8,17 @@ int main();
 
 void * memset(void * destiny, int32_t c, uint64_t length);
 
-int _start() {
-	//Clean BSS
+void _start() {
+	// Clean BSS
 	memset(&bss, 0, &endOfBinary - &bss);
 
-	return main();
-
+	// Call main - it should never return
+	main();
+	
+	// If main returns, halt forever
+	while(1) {
+		__asm__ __volatile__("hlt");
+	}
 }
 
 

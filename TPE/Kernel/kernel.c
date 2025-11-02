@@ -83,60 +83,78 @@ void * initializeKernelBinary()
 	return getStackBase();
 }
 
+
 int main()
 {
-	ncPrint("[Initializing system]");
-	ncNewline();
-	
-	// Load and configure IDT
-	ncPrint("  Loading IDT... ");
-	load_idt();
-	ncPrint("Done");
-	ncNewline();
-	
-	ncPrint("[Kernel Main]");
-	ncNewline();
-	
-	// Verify module is loaded correctly
-	ncPrint("  Sample code module at 0x");
-	ncPrintHex((uint64_t)sampleCodeModuleAddress);
-	ncNewline();
-	
-	// Check if module appears to be valid
-	ncPrint("  Checking sample code module... ");
-	if (*(uint64_t*)sampleCodeModuleAddress == 0) {
-		ncPrint("ERROR: Module appears to be empty\n");
-		return -1;
-	}
-	ncPrint("OK");
-	ncNewline();
-	
-	// Execute module
-	ncPrint("  Calling the sample code module returned: ");
-	//dsp sacar 
-	ncPrint("\n  DEBUG: About to jump to 0x");
+    ncPrint("[Initializing system]");
+    ncNewline();
+    
+    // Load and configure IDT
+    ncPrint("  Loading IDT... ");
+    load_idt();
+    ncPrint("Done");
+    ncNewline();
+    
+    ncPrint("[Kernel Main]");
+    ncNewline();
+    
+    // Verify module is loaded correctly
+    ncPrint("  Sample code module at 0x");
     ncPrintHex((uint64_t)sampleCodeModuleAddress);
-    ncPrint("\n  DEBUG: First bytes of module: ");
-    uint8_t *moduleBytes = (uint8_t*)sampleCodeModuleAddress;
-    for(int i = 0; i < 16; i++){
-        ncPrintHex(moduleBytes[i]);
+    ncNewline();
+    
+    // DEBUG: Show first bytes of module
+    ncPrint("  First 32 bytes of module:");
+    ncNewline();
+    uint8_t *bytes = (uint8_t*)sampleCodeModuleAddress;
+    for(int i = 0; i < 32; i++) {
+        if(i % 16 == 0) ncPrint("    ");
+        ncPrintHex(bytes[i]);
         ncPrint(" ");
+        if(i % 16 == 15) ncNewline();
     }
     ncNewline();
-	//dsp sacar
-	int result = ((EntryPoint)sampleCodeModuleAddress)();
-	ncPrintHex(result);
-	ncNewline();
-	ncNewline();
+    
+    // Check if module appears to be valid
+    ncPrint("  Checking sample code module... ");
+    if (*(uint64_t*)sampleCodeModuleAddress == 0) {
+        ncPrint("ERROR: Module appears to be empty");
+        ncNewline();
+        while(1) {
+            _hlt();
+        }
+    }
+    ncPrint("OK");
+    ncNewline();
+    
+    ncPrint("  Sample data module at 0x");
+    ncPrintHex((uint64_t)sampleDataModuleAddress);
+    ncNewline();
+    ncPrint("  Sample data module contents: ");
+    ncPrint((char*)sampleDataModuleAddress);
+    ncNewline();
+    ncNewline();
 
-	ncPrint("  Sample data module at 0x");
-	ncPrintHex((uint64_t)sampleDataModuleAddress);
-	ncNewline();
-	ncPrint("  Sample data module contents: ");
-	ncPrint((char*)sampleDataModuleAddress);
-	ncNewline();
-
-	ncPrint("[Finished]");
-	
-	return 0;
+    ncPrint("[About to transfer control...]");
+    ncNewline();
+    
+    // Enable interrupts before entering userland
+    _sti();
+    
+    ncPrint("[Transferring control to userland]");
+    ncNewline();
+    ncNewline();
+    
+    // Execute module - should never return
+    ((EntryPoint)sampleCodeModuleAddress)();
+    
+    // If we get here, the module returned unexpectedly
+    ncPrint("[Module exited - halting system]");
+    ncNewline();
+    
+    while(1) {
+        _hlt();
+    }
+    
+    return 0;
 }

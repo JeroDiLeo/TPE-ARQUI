@@ -31,7 +31,7 @@
 #define ERROR_COLOR      0xFF0000
 #define INFO_COLOR       0x00FFFF
 
-// Configuración
+// Configuracion
 #define TAB_SIZE 4
 #define ESC 27
 #define DEFAULT_SCALE 1
@@ -50,14 +50,18 @@
 // ============== VARIABLES GLOBALES ==============
 
 static char input_buffer[MAX_COMMAND_LENGTH];
-static char *argv_array[MAX_ARGS];
 
 // Prototipos de funciones auxiliares
-// static void print_prompt(void);
-// static void parse_and_execute(char *input);
-// static int tokenize(char *input, char **argv, int max_args);
-// static const Command *find_command(const char *name);
+static void print_prompt(void);
+static void print_prompt(void) {
+    const char *user = "user";
+    const char *host = "JerOS";
 
+    sys_write(STDOUT, user, strlen(user), USER_COLOR);
+    sys_write(STDOUT, "@", 1, PROMPT_COLOR);
+    sys_write(STDOUT, host, strlen(host), PROMPT_COLOR);
+    sys_write(STDOUT, ":$ ", 3, PROMPT_COLOR);
+}
 //Esto del main va en la parte de loader
 /**
  * @brief Punto de entrada de la shell
@@ -66,22 +70,21 @@ int shell_main(void) {
     sys_clear_screen();
     
     // Banner de bienvenida
-    puts("╔════════════════════════════════════════╗\n", COLOR_CYAN);
-    puts("║       Bienvenido a JerOS Shell        ║\n", COLOR_CYAN);
-    puts("║       Arquitectura de Computadoras    ║\n", COLOR_CYAN);
-    puts("╚════════════════════════════════════════╝\n", COLOR_CYAN);
+    puts("+========================================+\n", COLOR_CYAN);
+    puts("|        Bienvenido a JerOS Shell        |\n", COLOR_CYAN);
+    puts("|     Arquitectura de Computadoras       |\n", COLOR_CYAN);
+    puts("+========================================+\n", COLOR_CYAN);
     puts("\nEscriba 'help' para ver comandos disponibles\n", COLOR_WHITE);
     
     // Loop principal de la shell
-    while (1) {
-        //print_prompt();
+    // while (1) {
+    //     print_prompt();
         
-        int len = read_line(input_buffer, MAX_COMMAND_LENGTH);
-        if (len > 0) {
-            parse_and_execute(input_buffer);
-        }
-    }
+    //     int len = read_line(input_buffer, MAX_COMMAND_LENGTH);
+    //     if (len > 0) {
+    //         parse_and_execute(input_buffer);
+    //     }
+    // }
     
     return 0;
 }
-
