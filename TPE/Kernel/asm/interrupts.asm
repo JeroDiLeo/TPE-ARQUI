@@ -262,7 +262,7 @@ interrupt_keyboard:     ;(IRQ1)
 
 interrupt_syscall:      ;(INT 0X80)
     CTX_SAVE 0                  ; NO guardar RAX
-    mov  rdi, rax               ; rdi = número de syscall (SysV arg#1)
+    mov  r9, rax               
     call syscallHandler
     CTX_RESTORE 0               ; deja RAX con el valor de retorno
     iretq

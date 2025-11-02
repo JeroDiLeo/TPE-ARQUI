@@ -33,18 +33,6 @@ extern void _sys_exit(int exitCode) __attribute__((noreturn));
 #define sys_play_sound(freq, duration) _sys_playSound(freq, duration)
 #define sys_exit(code) _sys_exit(code)
 
-// Colores comunes
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
-#define COLOR_BLACK   0x000000
-#define COLOR_WHITE   0xFFFFFF
-#define COLOR_RED     0xFF0000
-#define COLOR_GREEN   0x00FF00
-#define COLOR_BLUE    0x0000FF
-#define COLOR_YELLOW  0xFFFF00
-#define COLOR_CYAN    0x00FFFF
-#define COLOR_MAGENTA 0xFF00FF
-#define COLOR_GRAY    0x808080
-#define COLOR_ORANGE  0xFFA500
+
 
 #endif

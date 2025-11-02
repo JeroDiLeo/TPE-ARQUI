@@ -74,7 +74,7 @@ int shell_main(void) {
     
     // Loop principal de la shell
     while (1) {
-        print_prompt();
+        //print_prompt();
         
         int len = read_line(input_buffer, MAX_COMMAND_LENGTH);
         if (len > 0) {

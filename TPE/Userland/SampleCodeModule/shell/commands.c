@@ -214,23 +214,18 @@ static int cmd_scale(int argc, char **argv) {
         return -1;
     }
     
-    char *endptr;
-    long scale = strtol(argv[1], &endptr, 10);
-    
-    if (*endptr != '\0' || endptr == argv[1]) {
-        puts("Error: Escala debe ser un número entero.\n", ERROR_COLOR);
-        return -1;
-    }
+    int scale = atoi(argv[1]);  // ← Usar atoi en vez de strtol
     
     if (scale < 1 || scale > 3) {
         puts("Error: Escala inválida. Debe ser 1, 2 o 3.\n", ERROR_COLOR);
         return -1;
     }
     
-    sys_set_font_scale((int)scale);
-    printf("Escala de fuente cambiada a %d.\n", (int)scale);
+    sys_set_font_scale(scale);
+    printf("Escala de fuente cambiada a %d.\n", scale);
     return 0;
 }
+
 //Estas dos son para REVISAR ademas desp del testearlas nose si son necesairas
 static int cmd_divzero(int argc, char **argv) {
     puts("Provocando excepción de división por cero...\n", INFO_COLOR);
@@ -275,20 +270,8 @@ static int cmd_beep(int argc, char **argv) {
         return -1;
     }
     
-    char *endptr;
-    long frequency = strtol(argv[1], &endptr, 10);
-    
-    if (*endptr != '\0' || endptr == argv[1]) {
-        puts("Error: Frecuencia debe ser un número entero.\n", ERROR_COLOR);
-        return -1;
-    }
-    
-    long duration = strtol(argv[2], &endptr, 10);
-    
-    if (*endptr != '\0' || endptr == argv[2]) {
-        puts("Error: Duración debe ser un número entero.\n", ERROR_COLOR);
-        return -1;
-    }
+    int frequency = atoi(argv[1]);  // ← Usar atoi
+    int duration = atoi(argv[2]);   // ← Usar atoi
     
     // Validar frecuencia (rango audible humano: 20Hz - 20000Hz)
     if (frequency < 20 || frequency > 20000) {
@@ -302,13 +285,12 @@ static int cmd_beep(int argc, char **argv) {
         return -1;
     }
     
-    printf("Reproduciendo sonido: %ld Hz por %ld ms...\n", frequency, duration);
-    sys_play_sound((int)frequency, (int)duration);
+    printf("Reproduciendo sonido: %d Hz por %d ms...\n", frequency, duration);
+    sys_play_sound(frequency, duration);
     puts("Sonido reproducido!\n", INFO_COLOR);
     
     return 0;
 }
-
 // Variable global para almacenar argumentos parseados
 static char *argv_array[MAX_ARGS];
 

@@ -113,6 +113,17 @@ int main()
 	
 	// Execute module
 	ncPrint("  Calling the sample code module returned: ");
+	//dsp sacar 
+	ncPrint("\n  DEBUG: About to jump to 0x");
+    ncPrintHex((uint64_t)sampleCodeModuleAddress);
+    ncPrint("\n  DEBUG: First bytes of module: ");
+    uint8_t *moduleBytes = (uint8_t*)sampleCodeModuleAddress;
+    for(int i = 0; i < 16; i++){
+        ncPrintHex(moduleBytes[i]);
+        ncPrint(" ");
+    }
+    ncNewline();
+	//dsp sacar
 	int result = ((EntryPoint)sampleCodeModuleAddress)();
 	ncPrintHex(result);
 	ncNewline();
@@ -126,5 +137,6 @@ int main()
 	ncNewline();
 
 	ncPrint("[Finished]");
-	return ((EntryPoint)sampleCodeModuleAddress)();
+	
+	return 0;
 }
