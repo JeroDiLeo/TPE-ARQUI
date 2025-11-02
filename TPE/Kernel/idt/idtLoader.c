@@ -9,7 +9,6 @@
 #define SYSCALL_INTERRUPT 0x80
 #define DIVIDE_BY_ZERO_EXCEPTION 0x00
 #define INVALID_OPCODE_EXCEPTION 0x06
-#define PAGE_FAULT_EXCEPTION 0x0E
 
 #pragma pack(push)		/* Push de la alineación actual */
 #pragma pack (1) 		/* Alinear las siguiente estructuras a 1 byte */
@@ -50,7 +49,6 @@ void load_idt() {
     //--Excepciones--
     setup_IDT_entry(DIVIDE_BY_ZERO_EXCEPTION, (uint64_t)&exception_divideByZero);
     setup_IDT_entry(INVALID_OPCODE_EXCEPTION, (uint64_t)&exception_invalidOpCode); 
-    setup_IDT_entry(PAGE_FAULT_EXCEPTION, (uint64_t)&exception_pageFault);
 
     
 

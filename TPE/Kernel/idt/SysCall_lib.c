@@ -57,32 +57,9 @@ static void scrollScreen(void) {
         return;
     }
     
-    // NOTA: Para mejor performance, esta implementación debería usar
-    // acceso directo al framebuffer con memmove/memcpy.
-    // La implementación actual es simple pero lenta.
-    
-    // Copiar framebuffer: desplazar (totalLines-1) líneas hacia arriba
-    for(uint16_t line = 1; line < totalLines; line++) {
-        //uint16_t srcY = line * fontHeight;
-        uint16_t dstY = (line - 1) * fontHeight;
-        
-        // Por cada línea, copiar todos los píxeles
-        for(uint16_t row = 0; row < fontHeight; row++) {
-            for(uint16_t x = 0; x < screenWidth; x++) {
-                // Leer y redibujar píxel
-                // TODO: Optimizar con acceso directo a framebuffer
-                // Por ahora usamos drawPixel (ineficiente)
-                drawPixel(bgColor, x, dstY + row);  // Simplificado: llenar con bgColor
-            }
-        }
-    }
-    
-    // Limpiar la última línea
-    drawRectangle(bgColor, 0, (totalLines - 1) * fontHeight, screenWidth, fontHeight);
-    
-    // Posicionar cursor al inicio de la última línea
-    position_x = 0;
-    position_y = (totalLines - 1) * fontHeight;
+    // Limpiar toda la pantalla y volver al inicio
+    // Esto permite que el comando se reejecute en pantalla limpia
+    sys_clearScreen();
 }
 
 uint64_t sys_write(int fd,const char * buffer, uint64_t size, uint64_t color){

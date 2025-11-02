@@ -13,12 +13,10 @@ void picMasterMask(uint8_t mask);
 void picSlaveMask(uint8_t mask);    
 
 uint64_t * _getSnapshot(void);      // Obtener snapshot de registros
-uint64_t _readCR2(void);            // Leer dirección causante de #PF
 
 // Handlers de excepciones e interrupciones
 void exception_divideByZero(void);
 void exception_invalidOpCode(void);
-void exception_pageFault(void);
 void interrupt_timerTick(void);
 void interrupt_keyboard(void);
 void interrupt_syscall(void);

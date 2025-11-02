@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "SysCall_Lib.h"
+#include "naiveConsole.h"
 
 /* Define SYSCALL_DEBUG to re-enable verbose syscall tracing. */
 // #define SYSCALL_DEBUG

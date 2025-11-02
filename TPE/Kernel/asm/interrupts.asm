@@ -8,7 +8,6 @@ GLOBAL picSlaveMask
 
 GLOBAL exception_divideByZero
 GLOBAL exception_invalidOpCode
-GLOBAL exception_pageFault
 
 GLOBAL interrupt_timerTick
 GLOBAL interrupt_keyboard
@@ -16,7 +15,6 @@ GLOBAL interrupt_syscall
 GLOBAL interrupt_exit
 
 GLOBAL _getSnapshot
-GLOBAL _readCR2
 
 EXTERN syscallHandler
 EXTERN exceptionHandler
@@ -136,10 +134,6 @@ _getSnapshot:
     mov rax, regs
     ret
 
-_readCR2:
-    mov rax, cr2
-    ret
-
 ;=======================
 ;    Exception Master
 ;=======================
@@ -253,9 +247,6 @@ exception_divideByZero:            ;(#DE = 0)
 
 exception_invalidOpCode:            ;(#UD = 6)
     exceptionHandlerMacro 6
-
-exception_pageFault:                ;(#PF = 14)
-    exceptionHandlerMacro 14
 
 ;===========================
 ;   Interrupts handlers

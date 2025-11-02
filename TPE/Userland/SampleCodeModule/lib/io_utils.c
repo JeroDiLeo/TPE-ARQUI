@@ -5,6 +5,7 @@
 
 #include "io_utils.h"
 #include "syscalls.h"
+#include "string_utils.h"
 #include <stdarg.h>
 
 // File descriptors
@@ -73,80 +74,120 @@ int isDigit(char c){
  * @param format Cadena de formato
  * @return Cantidad de caracteres impresos
  */
+// Helper para imprimir con padding
+static void print_with_padding(const char *str, int width, char pad_char, int *printed_chars) {
+    int len = strlen(str);
+    
+    // Agregar padding a la izquierda
+    for (int i = len; i < width; i++) {
+        putcharColor(pad_char, COLOR_WHITE);
+        (*printed_chars)++;
+    }
+    
+    puts(str, COLOR_WHITE);
+    (*printed_chars) += len;
+}
+
+// Helper para parsear el ancho del formato (ej: "02" de "%02d")
+static int parse_format_width(const char *format, int *index, int *zero_pad) {
+    int width = 0;
+    *zero_pad = (format[*index] == '0');
+    
+    while (format[*index] >= '0' && format[*index] <= '9') {
+        width = width * 10 + (format[*index] - '0');
+        (*index)++;
+    }
+    
+    return width;
+}
+
 int printf(const char *format, ...) {
-    // va_list arguments;
-    // va_start(arguments, format);
+    va_list arguments;
+    va_start(arguments, format);
     
-    // char conversion_buffer[CONVERSION_BUFFER_SIZE];
-    // int printed_chars = 0;
-    // int format_index = 0;
+    char conversion_buffer[CONVERSION_BUFFER_SIZE];
+    int printed_chars = 0;
+    int i = 0;
     
-    // while (format[format_index] != '\0') {
-    //     // Si encontramos '%', procesar formato especial
-    //     if (format[format_index] == '%' && format[format_index + 1] != '\0') {
-    //         format_index++; // Avanzar al especificador
+    while (format[i] != '\0') {
+        if (format[i] == '%' && format[i + 1] != '\0') {
+            i++; // Saltar el '%'
             
-    //         switch (format[format_index]) {
-    //             case 's': {
-    //                 // Imprimir string
-    //                 const char *string_arg = va_arg(arguments, const char *);
-    //                 puts(string_arg, COLOR_WHITE);
-    //                 printed_chars += strlen(string_arg);
-    //                 break;
-    //             }
+            // Verificar si hay especificador de ancho (ej: 02, 04)
+            int width = 0;
+            int zero_pad = 0;
+            
+            if (format[i] >= '0' && format[i] <= '9') {
+                width = parse_format_width(format, &i, &zero_pad);
+            }
+            
+            // Procesar el tipo de formato
+            switch (format[i]) {
+                case 's': {
+                    const char *string_arg = va_arg(arguments, const char *);
+                    puts(string_arg, COLOR_WHITE);
+                    printed_chars += strlen(string_arg);
+                    break;
+                }
                 
-    //             case 'd': {
-    //                 // Imprimir entero decimal
-    //                 int decimal_number = va_arg(arguments, int);
-    //                 itoa(decimal_number, conversion_buffer, 10);
-    //                 puts(conversion_buffer, COLOR_WHITE);
-    //                 printed_chars += strlen(conversion_buffer);
-    //                 break;
-    //             }
+                case 'd': {
+                    int decimal_number = va_arg(arguments, int);
+                    itoa(decimal_number, conversion_buffer, 10);
+                    
+                    if (width > 0) {
+                        char pad_char = zero_pad ? '0' : ' ';
+                        print_with_padding(conversion_buffer, width, pad_char, &printed_chars);
+                    } else {
+                        puts(conversion_buffer, COLOR_WHITE);
+                        printed_chars += strlen(conversion_buffer);
+                    }
+                    break;
+                }
                 
-    //             case 'c': {
-    //                 // Imprimir carácter
-    //                 char character = (char)va_arg(arguments, int);
-    //                 putcharColor(character, COLOR_WHITE);
-    //                 printed_chars++;
-    //                 break;
-    //             }
+                case 'x': {
+                    uint64_t hex_number = va_arg(arguments, uint64_t);
+                    itoa_hex(hex_number, conversion_buffer);
+                    
+                    if (width > 0) {
+                        char pad_char = zero_pad ? '0' : ' ';
+                        print_with_padding(conversion_buffer, width, pad_char, &printed_chars);
+                    } else {
+                        puts(conversion_buffer, COLOR_WHITE);
+                        printed_chars += strlen(conversion_buffer);
+                    }
+                    break;
+                }
                 
-    //             case 'x': {
-    //                 // Imprimir hexadecimal
-    //                 uint64_t hex_number = va_arg(arguments, uint64_t);
-    //                 itoa_hex(hex_number, conversion_buffer);
-    //                 puts(conversion_buffer, COLOR_WHITE);
-    //                 printed_chars += strlen(conversion_buffer);
-    //                 break;
-    //             }
+                case 'c': {
+                    char character = (char)va_arg(arguments, int);
+                    putcharColor(character, COLOR_WHITE);
+                    printed_chars++;
+                    break;
+                }
                 
-    //             case '%': {
-    //                 // Imprimir '%' literal
-    //                 putcharColor('%', COLOR_WHITE);
-    //                 printed_chars++;
-    //                 break;
-    //             }
+                case '%': {
+                    putcharColor('%', COLOR_WHITE);
+                    printed_chars++;
+                    break;
+                }
                 
-    //             default: {
-    //                 // Formato no reconocido, imprimir '%' y el carácter
-    //                 putcharColor('%', COLOR_WHITE);
-    //                 putcharColor(format[format_index], COLOR_WHITE);
-    //                 printed_chars += 2;
-    //                 break;
-    //             }
-    //         }
-    //     } else {
-    //         // Carácter normal, imprimir directamente
-    //         putcharColor(format[format_index], COLOR_WHITE);
-    //         printed_chars++;
-    //     }
+                default: {
+                    putcharColor('%', COLOR_WHITE);
+                    putcharColor(format[i], COLOR_WHITE);
+                    printed_chars += 2;
+                    break;
+                }
+            }
+        } else {
+            putcharColor(format[i], COLOR_WHITE);
+            printed_chars++;
+        }
         
-    //     format_index++;
-    // }
+        i++;
+    }
     
-    // va_end(arguments);
-    // return printed_chars;
+    va_end(arguments);
+    return printed_chars;
 }
 //===================================================================
 

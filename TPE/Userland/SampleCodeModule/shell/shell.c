@@ -1,153 +1,90 @@
-// /**
-//  * @file shell.c
-//  * @brief Shell interactiva del sistema operativo JerOS
-//  * @date 2025
-//  */
+/**
+ * @file shell.c
+ * @brief Shell interactiva del sistema operativo JerOS
+ * @date 2025
+ */
 
-// #include "syscalls.h"
-// #include "io_utils.h"
-// #include "string_utils.h"
-// #include "tron.h"
-// #include "shell.h"
-// #
-// // ============== CONSTANTES ==============
+#include "syscalls.h"
+#include "io_utils.h"
+#include "string_utils.h"
+#include "tron.h"
+#include "shell.h"
+#include "commands.h"
+#include <stddef.h>
 
-// #define MAX_COMMAND_LENGTH 256
-// #define MAX_ARGS 10
-// #define NULL ((void*)0)
-// #define MAXCMD 10
+// ============== CONSTANTES ==============
 
-// // File descriptors
-// #define STDIN  0
-// #define STDOUT 1
-// #define STDERR 2
+#define MAX_COMMAND_LENGTH 256
+#define MAX_ARGS 10
+#define MAXCMD 10
 
-// // Colores de la shell
-// #define USER_COLOR       0x0000AFFF
-// #define PROMPT_COLOR     0x005FD700
-// #define CURSOR_COLOR     COLOR_CYAN
-// #define SCREEN_COLOR     COLOR_BLACK
-// #define WHITE            COLOR_WHITE
-// #define ERROR_COLOR      0xFF0000
-// #define INFO_COLOR       0x00FFFF
+// File descriptors
+#define STDIN  0
+#define STDOUT 1
+#define STDERR 2
 
-// // Configuración
-// #define TAB_SIZE 4
-// #define ESC 27
-// #define DEFAULT_SCALE 1
+// Colores de la shell
+#define USER_COLOR       0x0000AFFF
+#define PROMPT_COLOR     0x005FD700
+#define CURSOR_COLOR     COLOR_CYAN
+#define SCREEN_COLOR     COLOR_BLACK
+#define WHITE            COLOR_WHITE
+#define ERROR_COLOR      0xFF0000
+#define INFO_COLOR       0x00FFFF
 
-// // Mensaje de bienvenida
-// #define WELCOME_MSG "Bienvenido al MejorOS. Fecha: %02d/%02d/20%02d\n"
+// Configuración
+#define TAB_SIZE 4
+#define ESC 27
+#define DEFAULT_SCALE 1
 
-// // ============== ESTRUCTURAS ==============
+// Mensaje de bienvenida
+#define WELCOME_MSG "Bienvenido al MejorOS. Fecha: %02d/%02d/20%02d\n"
 
-// //===
+// ============== ESTRUCTURAS ==============
 
-
-
+//===
 
 
-// // ============== VARIABLES GLOBALES ==============
 
-// static char input_buffer[MAX_COMMAND_LENGTH];
-// static char *argv_array[MAX_ARGS];
 
-// // Prototipos de funciones auxiliares
-// static void print_prompt(void);
-// static void parse_and_execute(char *input);
-// static int tokenize(char *input, char **argv, int max_args);
-// static const Command *find_command(const char *name);
 
-// //Esto del main va en la parte de loader
-// /**
-//  * @brief Punto de entrada de la shell
-//  */
-// int shell_main(void) {
-//     sys_clear_screen();
+// ============== VARIABLES GLOBALES ==============
+
+static char input_buffer[MAX_COMMAND_LENGTH];
+
+// Prototipos de funciones auxiliares
+static void print_prompt(void);
+
+//Esto del main va en la parte de loader
+/**
+ * @brief Punto de entrada de la shell
+ */
+int shell_main(void) {
+    sys_clear_screen();
     
-//     // Banner de bienvenida
-//     puts("╔════════════════════════════════════════╗\n", COLOR_CYAN);
-//     puts("║       Bienvenido a JerOS Shell        ║\n", COLOR_CYAN);
-//     puts("║       Arquitectura de Computadoras    ║\n", COLOR_CYAN);
-//     puts("╚════════════════════════════════════════╝\n", COLOR_CYAN);
-//     puts("\nEscriba 'help' para ver comandos disponibles\n", COLOR_WHITE);
+    // Banner de bienvenida
+    puts("╔════════════════════════════════════════╗\n", COLOR_CYAN);
+    puts("║       Bienvenido a JerOS Shell        ║\n", COLOR_CYAN);
+    puts("║       Arquitectura de Computadoras    ║\n", COLOR_CYAN);
+    puts("╚════════════════════════════════════════╝\n", COLOR_CYAN);
+    puts("\nEscriba 'help' para ver comandos disponibles\n", COLOR_WHITE);
     
-//     // Loop principal de la shell
-//     while (1) {
-//         print_prompt();
+    // Loop principal de la shell
+    while (1) {
+        print_prompt();
         
-//         int len = read_line(input_buffer, MAX_COMMAND_LENGTH);
-//         if (len > 0) {
-//             parse_and_execute(input_buffer);
-//         }
-//     }
+        int len = read_line(input_buffer, MAX_COMMAND_LENGTH);
+        if (len > 0) {
+            parse_and_execute(input_buffer);
+        }
+    }
     
-//     return 0;
-// }
+    return 0;
+}
 
-// /**
-//  * @brief Imprime el prompt de la shell
-//  */
-// static void print_prompt(void) {
-//     puts("\n$ ", PROMPT_COLOR);
-// }
-
-// /**
-//  * @brief Parsea y ejecuta un comando
-//  */
-// static void parse_and_execute(char *input) {
-//     // Tokenizar entrada
-//     int argc = tokenize(input, argv_array, MAX_ARGS);
-    
-//     if (argc == 0) {
-//         return;  // Línea vacía
-//     }
-    
-//     // Buscar comando
-//     const Command *cmd = find_command(argv_array[0]);
-    
-//     if (cmd == NULL) {
-//         puts("Error: Comando no encontrado '", ERROR_COLOR);
-//         puts(argv_array[0], ERROR_COLOR);
-//         puts("'\n", ERROR_COLOR);
-//         puts("Escriba 'help' para ver comandos disponibles\n", INFO_COLOR);
-//         return;
-//     }
-    
-//     // Ejecutar handletokenizer
-//     cmd->handler(argc, argv_array);
-// }
-
-// /**
-//  * @brief Divide una cadena en tokens (palabras separadas por espacios)
-//  * @return Cantidad de tokens encontrados
-//  */
-// static int tokenize(char *input, char **argv, int max_args) {
-//     int argc = 0;
-//     int in_token = 0;
-    
-//     for (char *p = input; *p != '\0' && argc < max_args; p++) {
-//         if (*p == ' ' || *p == '\t' || *p == '\n') {
-//             *p = '\0';
-//             in_token = 0;
-//         } else if (!in_token) {
-//             argv[argc++] = p;
-//             in_token = 1;
-//         }
-//     }
-    
-//     return argc;
-// }
-
-// /**
-//  * @brief Busca un comando en la tabla de comandos
-//  * @return Puntero al comando o NULL si no se encuentra
-//  */
-// static const Command *find_command(const char *name) {
-//     for (int i = 0; i < MAXCMD; i++) {
-//         if (commands[i].name != NULL && strcmp(name, commands[i].name) == 0) {
-//             return &commands[i];
-//         }
-//     }
-//     return NULL;
-// }
+/**
+ * @brief Imprime el prompt de la shell
+ */
+static void print_prompt(void) {
+    puts("\n$ ", PROMPT_COLOR);
+}
