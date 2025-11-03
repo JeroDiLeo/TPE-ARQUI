@@ -483,7 +483,6 @@ void runTronGame(GameState *game) {
     const char *p1_controls = "Jugador 1 (CYAN): W/A/S/D\n";
     const char *p2_controls = "Jugador 2 (MAGENTA): I/J/K/L\n\n";
     const char *mode_msg = "Presiona 1 (1 jugador) o 2 (2 jugadores)\n";
-    const char *start_msg = "Luego, presiona cualquier tecla para empezar...\n";
     
     sys_write(1, title, 28, COLOR_TEXT);
     sys_write(1, p1_controls, 27, COLOR_P1_TRAIL);
@@ -498,11 +497,7 @@ void runTronGame(GameState *game) {
     }
     game->num_players = (sel == '1') ? 1 : 2;
     
-    // En 1 jugador pedimos confirmación; en 2 jugadores comienza directo
-    if (game->num_players == 1) {
-        puts(start_msg, COLOR_TEXT);
-        (void)sys_wait_key();
-    }
+    // Comienza directo tras elegir modalidad (1P o 2P)
     
     // Limpiar pantalla y empezar el juego
     sys_clear_screen();

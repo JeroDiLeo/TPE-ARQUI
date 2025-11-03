@@ -433,11 +433,11 @@ static int cmd_exit(int argc, char **argv) {
 }
 
 static int cmd_tron(int argc, char **argv) {
-    puts("Iniciando juego Tron...\n", INFO_COLOR);
+    // puts("Iniciando juego Tron...\n", INFO_COLOR);
     tron_game();
     // Limpiar pantalla al volver
     sys_clear_screen();
-    puts("Juego terminado. Bienvenido de vuelta a la shell.\n", COLOR_CYAN);
+    // puts("Juego terminado. Bienvenido de vuelta a la shell.\n", COLOR_CYAN);
     return 0;
 }
 
