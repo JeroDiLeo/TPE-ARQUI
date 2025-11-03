@@ -37,7 +37,7 @@ typedef enum {
 #define KEY_RIGHT 'l'
 
 // Controles generales
-#define KEY_ESC 27
+#define KEY_ESC 0x01
 #define KEY_R 'r'       // Reiniciar
 #define KEY_Q 'q'       // Salir
 
