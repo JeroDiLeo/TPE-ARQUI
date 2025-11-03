@@ -235,7 +235,7 @@ void parse_and_execute(char *input, int * isExit) {
     uint32_t y_before = (coords_before >> 32) & 0xFFFFFFFF;
     
     // Ejecutar handler
-    int result = cmd->handler(argc, argv_array);
+    cmd->handler(argc, argv_array);
     
     // Si el comando es exit, setear la flag
     if (strcmp(argv_array[0], "exit") == 0) {
