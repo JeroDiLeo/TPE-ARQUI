@@ -21,4 +21,8 @@ uint8_t getDay(void);
 uint8_t getMonth(void);
 uint32_t getYear(void);
 
+// Timezone configuration
+void setTimezoneOffset(int8_t offset);
+int8_t getTimezoneOffset(void);
+
 #endif

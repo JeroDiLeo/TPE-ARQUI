@@ -1,12 +1,22 @@
 #include "../includes/syscalls.h"
 #include "../includes/time.h"
 
-// Ajuste de zona horaria (horas a restar de UTC)
-// UTC-3 para Argentina
-#define TIMEZONE_OFFSET 3
+// Variable global para el offset de zona horaria (default UTC-3 para Argentina)
+static int8_t timezone_offset = 3;
 
 static uint8_t bcdToDec(uint8_t bcd) {
     return ((bcd >> 4) * 10) + (bcd & 0x0F);
+}
+
+void setTimezoneOffset(int8_t offset) {
+    // Validar que el offset esté en un rango razonable (-12 a +14)
+    if (offset >= -12 && offset <= 14) {
+        timezone_offset = offset;
+    }
+}
+
+int8_t getTimezoneOffset(void) {
+    return timezone_offset;
 }
 
 uint8_t getSeconds() {
@@ -21,14 +31,16 @@ uint8_t getHours() {
     uint8_t hours = bcdToDec((uint8_t)_sys_getTime(HOURS_ARG));
     
     // Ajustar zona horaria
-    if (hours >= TIMEZONE_OFFSET) {
-        hours -= TIMEZONE_OFFSET;
-    } else {
-        // Si la resta da negativo, ajustar (ej: 02:00 UTC - 3 = 23:00 del día anterior)
-        hours = 24 + hours - TIMEZONE_OFFSET;
+    int8_t adjusted = (int8_t)hours - timezone_offset;
+    
+    // Normalizar a rango 0-23
+    if (adjusted < 0) {
+        adjusted += 24;
+    } else if (adjusted >= 24) {
+        adjusted -= 24;
     }
     
-    return hours;
+    return (uint8_t)adjusted;
 }
 
 uint8_t getDay() {

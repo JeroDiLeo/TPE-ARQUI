@@ -1,7 +1,7 @@
 #ifndef _COMMANDS_H
 #define _COMMANDS_H
 
-#define MAXCMD 10
+#define MAXCMD 11
 
 // Declaración forward de la estructura Command
 typedef struct Tcommand * Command;

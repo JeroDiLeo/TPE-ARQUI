@@ -16,7 +16,7 @@
 
 #define MAX_COMMAND_LENGTH 256
 #define MAX_ARGS 10
-#define MAXCMD 10
+
 
 // File descriptors
 #define STDIN  0

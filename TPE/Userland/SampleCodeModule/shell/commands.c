@@ -19,7 +19,7 @@
 
 #define MAX_COMMAND_LENGTH 256
 #define MAX_ARGS 10
-#define MAXCMD 10
+#define MAXCMD 11
 
 // File descriptors
 #define STDIN  0
@@ -58,6 +58,7 @@ struct Tcommand {
 // Comandos
 static int cmd_help(int argc, char **argv);
 static int cmd_time(int argc, char **argv);
+static int cmd_timezone(int argc, char **argv);
 static int cmd_inforeg(int argc, char **argv);
 static int cmd_clear(int argc, char **argv);
 static int cmd_scale(int argc, char **argv);
@@ -86,6 +87,13 @@ static struct Tcommand cmd_time_s = {
     .handler = cmd_time,
     .description = "Muestra fecha y hora actual",
     .usage = "time"
+};
+
+static struct Tcommand cmd_timezone_s = {
+    .name = "timezone",
+    .handler = cmd_timezone,
+    .description = "Configura el offset de zona horaria (ej: -3 para UTC-3)",
+    .usage = "timezone <offset>"
 };
 
 static struct Tcommand cmd_inforeg_s = {
@@ -148,6 +156,7 @@ static struct Tcommand cmd_beep_s = {
 Command commands[MAXCMD] = {
     &cmd_help_s,
     &cmd_time_s,
+    &cmd_timezone_s,
     &cmd_inforeg_s,
     &cmd_clear_s,
     &cmd_scale_s,
@@ -279,6 +288,40 @@ static int cmd_time(int argc, char **argv) {
 
     printf("Fecha: %02d/%02d/%04d\n", day, month, year);
     printf("Hora: %02d:%02d:%02d\n", hours, minutes, seconds);
+    int8_t offset = getTimezoneOffset();
+    printf("Zona horaria: UTC%s%d\n", offset >= 0 ? "+" : "", -offset);
+    return 0;
+}
+
+static int cmd_timezone(int argc, char **argv) {
+    if (argc == 1) {
+        // Sin argumentos: mostrar el offset actual
+        int8_t offset = getTimezoneOffset();
+        printf("Zona horaria actual: UTC%s%d\n", offset >= 0 ? "+" : "", -offset);
+        printf("Uso: timezone <numero>\n");
+        printf("Ejemplo: timezone -3  (para UTC-3, Argentina)\n");
+        printf("         timezone -5  (para UTC-5, Colombia/Peru)\n");
+        return 0;
+    }
+    
+    if (argc != 2) {
+        puts("Uso: timezone <numero>\n", ERROR_COLOR);
+        return -1;
+    }
+    
+    // Parsear el offset (puede ser negativo)
+    int offset = atoi(argv[1]);
+    
+    if (offset < -12 || offset > 14) {
+        puts("Error: Offset invalido. Debe estar entre -12 y +14.\n", ERROR_COLOR);
+        return -1;
+    }
+    
+    // Invertir el signo: usuario dice UTC-3, internamente guardamos +3 para restar
+    setTimezoneOffset(-offset);
+    
+    printf("Zona horaria cambiada a UTC%s%d\n", offset >= 0 ? "+" : "", offset);
+    puts("Ejecuta 'time' para ver la hora actualizada.\n", INFO_COLOR);
     return 0;
 }
 
@@ -371,6 +414,7 @@ static int cmd_scale(int argc, char **argv) {
 //Estas dos son para REVISAR ademas desp del testearlas nose si son necesairas
 static int cmd_divzero(int argc, char **argv) {
     _divzero();
+    return 0;
 }
 
 static int cmd_invopcode(int argc, char **argv) {
