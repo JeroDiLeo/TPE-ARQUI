@@ -157,3 +157,34 @@ int drawRectangle(uint32_t hexColor, uint64_t x, uint64_t y, uint64_t width, uin
 void clearScreen(){
     drawRectangle(BLACK, 0, 0, getScreenWidth(), getScreenHeight());
 }
+
+void scrollFramebuffer(uint16_t lines) {
+    uint8_t * framebuffer = (uint8_t *)(uintptr_t)vbe_mode_info->framebuffer;
+    //uint16_t width = vbe_mode_info->width;
+    uint16_t height = vbe_mode_info->height;
+    uint16_t pitch = vbe_mode_info->pitch;
+    
+    // Validar que lines no sea mayor que la altura
+    if(lines >= height) {
+        clearScreen();
+        return;
+    }
+    
+    // Copiar desde la línea 'lines' hacia arriba
+    // Source: línea 'lines', Dest: línea 0
+    uint64_t bytesToCopy = pitch * (height - lines);
+    uint8_t * dest = framebuffer;
+    uint8_t * src = framebuffer + (pitch * lines);
+    
+    // Copiar memoria hacia arriba
+    for(uint64_t i = 0; i < bytesToCopy; i++) {
+        dest[i] = src[i];
+    }
+    
+    // Limpiar las últimas 'lines' líneas (rellenar con negro o bgColor)
+    uint64_t startOffset = pitch * (height - lines);
+    uint64_t clearBytes = pitch * lines;
+    for(uint64_t i = 0; i < clearBytes; i++) {
+        framebuffer[startOffset + i] = 0x00;  // Negro
+    }
+}

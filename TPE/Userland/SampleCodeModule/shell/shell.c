@@ -59,7 +59,7 @@ static void print_prompt(void);
 /**
  * @brief Punto de entrada de la shell
  */
-int shell_main(void) {
+void shell_main(void) {
     sys_clear_screen();
     
     // Banner de bienvenida
@@ -68,18 +68,17 @@ int shell_main(void) {
     puts("║       Arquitectura de Computadoras    ║\n", COLOR_CYAN);
     puts("╚════════════════════════════════════════╝\n", COLOR_CYAN);
     puts("\nEscriba 'help' para ver comandos disponibles\n", COLOR_WHITE);
-    
+
+    int isExit = 0;
     // Loop principal de la shell
-    while (1) {
+    while (!isExit) {
         print_prompt();
         
         int len = read_line(input_buffer, MAX_COMMAND_LENGTH);
         if (len > 0) {
-            parse_and_execute(input_buffer);
+            parse_and_execute(input_buffer, &isExit);
         }
     }
-    
-    return 0;
 }
 
 /**

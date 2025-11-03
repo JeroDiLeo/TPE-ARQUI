@@ -5,6 +5,7 @@
 #include <naiveConsole.h>
 #include "interrupts.h"
 #include "idtLoader.h"
+#include "SysCall_Lib.h"
 
 
 extern uint8_t text;
@@ -149,5 +150,32 @@ int main()
 	
 
 	ncPrint("[Finished]");
-	return ((EntryPoint)sampleCodeModuleAddress)();
+	ncNewline();
+	
+	// Verificar si el módulo pidió salir
+	if (checkShouldExit()) {
+		ncPrint("Exit requested with code: ");
+		ncPrintHex(getLastExitCode());
+		ncNewline();
+		ncPrint("Shutting down...");
+		ncNewline();
+		
+		// Apagar QEMU usando el puerto especial de QEMU
+		// Esto funciona en QEMU y hace que termine la emulación
+		__asm__ volatile (
+			"mov $0x2000, %%rax\n"
+			"mov $0x604, %%rdx\n"
+			"out %%ax, %%dx\n"
+			:
+			:
+			: "rax", "rdx"
+		);
+	}
+	
+	// Si no hay exit, loop infinito
+	while(1) {
+		__asm__ volatile ("hlt");
+	}
+	
+	return 0;
 }

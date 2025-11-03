@@ -11,6 +11,7 @@
 #include "shell.h"
 #include "commands.h"
 #include "time.h"
+#include "exceptions.h"
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -196,7 +197,7 @@ static Command find_command(const char *name) {
 /**
  * @brief Parsea y ejecuta un comando
  */
-void parse_and_execute(char *input) {
+void parse_and_execute(char *input, int * isExit) {
     static char *argv_array[MAX_ARGS];
     static char last_input[MAX_COMMAND_LENGTH];
     static int retry_count = 0;
@@ -225,7 +226,13 @@ void parse_and_execute(char *input) {
     uint32_t y_before = (coords_before >> 32) & 0xFFFFFFFF;
     
     // Ejecutar handler
-    cmd->handler(argc, argv_array);
+    int result = cmd->handler(argc, argv_array);
+    
+    // Si el comando es exit, setear la flag
+    if (strcmp(argv_array[0], "exit") == 0) {
+        *isExit = 1;
+        return;
+    }
     
     // Obtener posición Y después de ejecutar
     uint64_t coords_after = sys_get_coords();
@@ -279,17 +286,16 @@ static int cmd_inforeg(int argc, char **argv) {
     #define TOTAL_REGS 17
     uint64_t registers[TOTAL_REGS];
     
-    // Initialize array to known values
-    for(int i = 0; i < TOTAL_REGS; i++) {
-        registers[i] = 0xFFFFFFFFFFFFFFFF;
-    }
+    // // Initialize array to known values
+    // for(int i = 0; i < TOTAL_REGS; i++) {
+    //     registers[i] = 0xFFFFFFFFFFFFFFFF;
+    // }
     
     // Obtener registros capturados
     uint64_t result = sys_get_registers(registers);
     
-    printf("Syscall result: %d\n", result);
-    
-    if (result == 0) {
+    // En nuestro ABI: sys_get_registers retorna 0 en éxito, -1 en error.
+    if (result != 0) {
         puts("No hay registros capturados. Presione Ctrl+R para capturar el estado actual.\n", ERROR_COLOR);
         return 0;
     }
@@ -364,19 +370,11 @@ static int cmd_scale(int argc, char **argv) {
 }
 //Estas dos son para REVISAR ademas desp del testearlas nose si son necesairas
 static int cmd_divzero(int argc, char **argv) {
-    puts("Provocando excepción de división por cero...\n", INFO_COLOR);
-    volatile int a = 1;
-    volatile int b = 0;
-    volatile int c = a / b;  // Esto debería causar la excepción
-    (void)c; // Evitar advertencia de variable no usada
-    return 0;
+    _divzero();
 }
 
 static int cmd_invopcode(int argc, char **argv) {
-    puts("Provocando excepción de opcode inválido...\n", INFO_COLOR);
-    __asm__ volatile (
-        ".byte 0x0F, 0x0B"  // Opcode inválido
-    );
+    _invalidopcode();
     return 0;
 }
 
@@ -387,7 +385,7 @@ static int cmd_exit(int argc, char **argv) {
     while(1) {
         __asm__ volatile ("hlt");
     }
-    return 0;
+    return 1;
 }
 
 static int cmd_tron(int argc, char **argv) {
@@ -427,4 +425,3 @@ static int cmd_beep(int argc, char **argv) {
     
     return 0;
 }
-

@@ -28,4 +28,7 @@ int setScale(uint8_t newScale);
 /* Devuelve la escala actual de texto. */
 uint8_t getScale(void);
 
+/* Desplaza el contenido de la pantalla hacia arriba por 'lines' líneas de píxeles. */
+void scrollFramebuffer(uint16_t lines);
+
 #endif /* VIDEO_DRIVER_H */

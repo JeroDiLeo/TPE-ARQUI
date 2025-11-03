@@ -10,6 +10,6 @@ typedef struct Tcommand * Command;
 extern Command commands[MAXCMD];
 
 // Función pública para parsear y ejecutar comandos
-void parse_and_execute(char *input);
+void parse_and_execute(char *input, int * exit);
 
 #endif

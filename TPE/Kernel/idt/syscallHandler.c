@@ -52,6 +52,7 @@ uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, 
         case SYS_GETREGS: return sys_getRegisters((uint64_t *) rdi);
         case SYS_SLEEP: return sys_sleep(rdi);
         case SYS_PLAYSOUND: return sys_playSound(rdi, rsi);
+        case SYS_SETBGCOLOR: return sys_setBgColor(rdi);
         case SYS_GETBGCOLOR : return sys_getBgColor();
         case SYS_EXIT : return sys_exit((int)rdi);
         default: return 0;

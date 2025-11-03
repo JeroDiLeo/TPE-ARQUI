@@ -4,7 +4,7 @@
 /**
  * @brief Starts the shell.
  */
-int shell_main();
+void shell_main();
 
 
 #endif //TPE_ARQ_SHELL_H

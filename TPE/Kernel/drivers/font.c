@@ -5149,9 +5149,9 @@ uint8_t getFontHeight() {
     return bmp1.height;
 }
 
-uint8_t * getFontChar(char c) {
+uint8_t * getFontChar( char c) {
     if (c < MIN_CHAR || c > MAX_CHAR) {
         return NULL;
     }
-    return (uint8_t *)bmpMat[c];
+    return (uint8_t *)bmpMat[(unsigned char)c]; // sino casteo el char a unsigned char 
 }

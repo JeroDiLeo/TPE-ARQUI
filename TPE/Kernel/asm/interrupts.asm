@@ -144,36 +144,53 @@ _getSnapshot:
 ; - Si vino de KERNEL:   muestra info (si es posible) y detiene sistema
 
 %macro exceptionHandlerMacro 1
-    ; Primero verificar origen ANTES de fillSnapshot (por si acaso)
-    mov  rax, [rsp + 8]         ; CS del marco de interrupción
-    test al, 3                  ; ¿CPL = 3? (userland)
-    jz   %%kernel_exception    ; Si es 0, vino del kernel -> panic
+    ; Detectar si la excepción proviene de userland o kernel
+    ; 1) Si CPL=3 => seguro userland (stack switch: frame incluye SS:RSP)
+    ; 2) Si CPL!=3, pero RIP ∈ [0x400000,0x600000) => userland en CPL0
+    ; 3) Caso contrario => kernel
 
-    ; === EXCEPCIÓN DESDE USERLAND ===
-    fillSnapshot                ; Captura estado completo
-    mov  rdi, %1                ; Vector de excepción (0 o 6)
-    call exceptionHandler       ; Muestra pantalla azul, registros, espera tecla
-    
-    ; Al retornar de exceptionHandler, resetear a shell
-    call getStackBase           ; RAX = RSP de usuario limpio
-    mov  [rsp + 24], rax        ; RSP de retorno (user)
-    mov  rax, userland          ; RIP de retorno (entry shell)
-    mov  [rsp + 0],  rax
-    iretq                       ; Retornar a shell con stack limpio
+    mov  rbx, [rsp + 0]         ; RIP
+    mov  rax, [rsp + 8]         ; CS
+    mov  rcx, rax
+    and  ecx, 3
+    cmp  ecx, 3
+    je   %%from_user_ring3
 
-%%kernel_exception:
-    ; === EXCEPCIÓN DESDE KERNEL ===
-    ; El kernel no debería fallar. Si falla, el sistema está corrupto.
-    fillSnapshot                ; Captura lo que se pueda
+    ; Comprobar rango de módulo de usuario cargado (0x400000..0x600000)
+    mov  rdx, rbx
+    cmp  rdx, 0x400000
+    jb   %%from_kernel
+    cmp  rdx, 0x600000
+    jae  %%from_kernel
+    jmp  %%from_user_ring0
+
+%%from_user_ring3:
+    ; === USERLAND (CPL3) ===
+    fillSnapshot
     mov  rdi, %1
-    
-    ; Intentar mostrar info (puede fallar si el kernel está muy corrupto)
     call exceptionHandler
-    
-    ; Detener el sistema permanentemente
-    cli                         ; Deshabilitar interrupciones
-    hlt                         ; Detener CPU
-    ; Por si acaso hlt retorna (NMI, SMI, etc):
+    call getStackBase           ; RAX = nuevo RSP de usuario
+    mov  [rsp + 24], rax        ; En CPL3 el frame incluye SS:RSP
+    mov  rax, userland          ; nuevo RIP
+    mov  [rsp + 0],  rax
+    iretq
+
+%%from_user_ring0:
+    ; === USERLAND en CPL0 (sin cambio de pila) ===
+    fillSnapshot
+    mov  rdi, %1
+    call exceptionHandler
+    mov  rax, userland          ; solo cambiar RIP del frame
+    mov  [rsp + 0], rax
+    iretq
+
+%%from_kernel:
+    ; === KERNEL ===
+    fillSnapshot
+    mov  rdi, %1
+    call exceptionHandler
+    cli
+    hlt
 %%hang_forever:
     cli
     hlt

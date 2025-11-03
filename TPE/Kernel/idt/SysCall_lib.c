@@ -45,21 +45,13 @@ uint64_t sys_read(int fd, char * buffer, uint64_t size) {
 static void scrollScreen(void) {
     uint8_t scale = getScale();
     uint16_t fontHeight = getFontHeight() * scale;
-    uint16_t screenWidth = getScreenWidth();
-    uint16_t screenHeight = getScreenHeight();
     
-    // Calcular número de líneas completas de texto en pantalla
-    uint16_t totalLines = screenHeight / fontHeight;
+    // Desplazar el framebuffer una línea de texto hacia arriba
+    scrollFramebuffer(fontHeight);
     
-    if(totalLines <= 1) {
-        // Si solo cabe 1 línea, limpiamos toda la pantalla
-        sys_clearScreen();
-        return;
-    }
-    
-    // Limpiar toda la pantalla y volver al inicio
-    // Esto permite que el comando se reejecute en pantalla limpia
-    sys_clearScreen();
+    // Mover la posición Y hacia atrás una línea
+    position_y -= fontHeight;
+    position_x = 0;
 }
 
 uint64_t sys_write(int fd,const char * buffer, uint64_t size, uint64_t color){
@@ -215,6 +207,15 @@ uint64_t sys_getBgColor(){
 uint64_t sys_exit(int exitCode){
     lastExitCode = exitCode;
     shouldExit = 1;
+    
+    // Detener la ejecución del programa con un loop infinito
+    // Esto evita que el programa continúe ejecutándose
+    _cli();  // Deshabilitar interrupciones
+    while(1) {
+        _hlt();  // Halt CPU hasta la próxima interrupción (aunque estén deshabilitadas)
+    }
+    
+    // Este código nunca se alcanza
     return 0;
 }
 
