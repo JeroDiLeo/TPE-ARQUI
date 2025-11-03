@@ -6,7 +6,7 @@
 // Prototipos de syscalls (implementadas en asm/syscall.asm)
 extern uint64_t _sys_read(uint64_t fd, char *buffer, uint64_t count);
 extern uint64_t _sys_write(uint64_t fd, const char *buffer, uint64_t count, uint64_t color);
-extern uint64_t _sys_drawRectangle(uint64_t x, uint64_t y, uint64_t width, uint64_t height, uint64_t color);
+extern uint64_t _sys_drawRectangle(uint32_t hexColor, uint64_t x, uint64_t y, uint64_t width, uint64_t height, uint64_t color);
 extern uint64_t _sys_clearScreen(void);
 extern uint64_t _sys_getCoords(void);
 extern uint64_t _sys_getScreenInfo(void);
@@ -21,7 +21,7 @@ extern void _sys_exit(int exitCode) __attribute__((noreturn));
 // Wrappers con nombres más amigables
 #define sys_read(fd, buf, count) _sys_read(fd, buf, count)
 #define sys_write(fd, buf, count, color) _sys_write(fd, buf, count, color)
-#define sys_draw_rectangle(x, y, w, h, color) _sys_drawRectangle(x, y, w, h, color)
+#define sys_draw_rectangle(Hexcolor, x, y, w, h) _sys_drawRectangle(color, x, y, w, h, color)
 #define sys_clear_screen() _sys_clearScreen()
 #define sys_get_coords() _sys_getCoords()
 #define sys_get_screen_info() _sys_getScreenInfo()

@@ -1,4 +1,4 @@
 #!/bin/bash
-# qemu-system-x86_64 -hda Image/x64BareBonesImage.qcow2 -m 512 
+qemu-system-x86_64 -hda Image/x64BareBonesImage.qcow2 -m 512 
 
-qemu-system-x86_64 -hda Image/test_sound -m 512 -soundhw pcspk
+# qemu-system-x86_64 -device AC97 -m 512 -hda Image/test_sound
