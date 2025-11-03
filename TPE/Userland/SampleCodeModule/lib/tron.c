@@ -21,6 +21,115 @@
 static int SCREEN_WIDTH = 1024;
 static int SCREEN_HEIGHT = 768;
 
+// ================= HUD / SCOREBOARD =================
+// Altura reservada para el HUD (en píxeles)
+#define HUD_HEIGHT_PX   (TRON_BLOCK_SIZE * 6)   // suficiente para dígitos 3x5
+#define HUD_PADDING_PX  8
+
+// Fuente de dígitos 3x5 (cada fila son 3 bits; 1 = pinta celda)
+#define DIGIT_COLS 3
+#define DIGIT_ROWS 5
+static const uint8_t DIGITS[10][DIGIT_ROWS] = {
+    {0b111, 0b101, 0b101, 0b101, 0b111}, // 0
+    {0b010, 0b110, 0b010, 0b010, 0b111}, // 1
+    {0b111, 0b001, 0b111, 0b100, 0b111}, // 2
+    {0b111, 0b001, 0b111, 0b001, 0b111}, // 3
+    {0b101, 0b101, 0b111, 0b001, 0b001}, // 4
+    {0b111, 0b100, 0b111, 0b001, 0b111}, // 5
+    {0b111, 0b100, 0b111, 0b101, 0b111}, // 6
+    {0b111, 0b001, 0b001, 0b001, 0b001}, // 7
+    {0b111, 0b101, 0b111, 0b101, 0b111}, // 8
+    {0b111, 0b101, 0b111, 0b001, 0b111}  // 9
+};
+
+// Dibuja un dígito 3x5 en (x, y) en píxeles
+static void drawDigitPx(int x, int y, int digit, uint64_t color) {
+    if (digit < 0 || digit > 9) return;
+    const uint8_t *rows = DIGITS[digit];
+    int cell = TRON_BLOCK_SIZE; // tamaño de la celda del dígito
+    for (int r = 0; r < DIGIT_ROWS; r++) {
+        for (int c = 0; c < DIGIT_COLS; c++) {
+            if ((rows[r] >> (DIGIT_COLS - 1 - c)) & 1) {
+                sys_draw_rectangle(color,
+                                   x + c * cell,
+                                   y + r * cell,
+                                   cell,
+                                   cell);
+            } else {
+                // fondo del HUD (para borrar artefactos al actualizar)
+                sys_draw_rectangle(COLOR_BACKGROUND,
+                                   x + c * cell,
+                                   y + r * cell,
+                                   cell,
+                                   cell);
+            }
+        }
+    }
+}
+
+static int digitsCount(int value){
+    if (value <= 0) return 1;
+    int n = 0;
+    while (value) { n++; value /= 10; }
+    return n;
+}
+
+static void drawNumberPx(int x, int y, int value, uint64_t color) {
+    if (value < 0) value = 0;
+    int cell = TRON_BLOCK_SIZE;
+    int spacing = cell; // espacio entre dígitos
+
+    // Convertir a dígitos en un buffer (máx 10 dígitos para int)
+    int buf[10];
+    int idx = 0;
+    if (value == 0) {
+        buf[idx++] = 0;
+    } else {
+        int v = value;
+        int tmp[10];
+        int k = 0;
+        while (v > 0 && k < 10) { tmp[k++] = v % 10; v /= 10; }
+        // invertir
+        for (int i = k - 1; i >= 0; --i) buf[idx++] = tmp[i];
+    }
+
+    for (int i = 0; i < idx; i++) {
+        drawDigitPx(x, y, buf[i], color);
+        x += DIGIT_COLS * cell + spacing;
+    }
+}
+
+static void drawHUD(GameState *game) {
+    // Fondo del HUD
+    sys_draw_rectangle(COLOR_BACKGROUND, 0, 0, SCREEN_WIDTH, HUD_HEIGHT_PX);
+
+    // Puntajes (basados en la longitud del rastro recorrido)
+    int p1_score = (game->player1.trail_length > 0) ? (game->player1.trail_length - 1) : 0;
+    int p2_score = (game->player2.trail_length > 0) ? (game->player2.trail_length - 1) : 0;
+
+    // Indicadores de color
+    int square = TRON_BLOCK_SIZE * 3; // 12px con BLOCK_SIZE=4
+    sys_draw_rectangle(COLOR_P1_TRAIL, HUD_PADDING_PX, HUD_PADDING_PX, square, square);
+
+    // Números de P1 (a la derecha del cuadrado)
+    int p1_x = HUD_PADDING_PX + square + (TRON_BLOCK_SIZE);
+    int p1_y = HUD_PADDING_PX;
+    drawNumberPx(p1_x, p1_y, p1_score, COLOR_P1_TRAIL);
+
+    // P2 a la derecha: cuadrado de color pegado al borde derecho
+    int p2_square_x = SCREEN_WIDTH - HUD_PADDING_PX - square;
+    sys_draw_rectangle(COLOR_P2_TRAIL, p2_square_x, HUD_PADDING_PX, square, square);
+
+    // Números de P2 a la izquierda del cuadrado
+    int cell = TRON_BLOCK_SIZE;
+    int spacing = cell;
+    int nDigits = digitsCount(p2_score);
+    int numberWidth = nDigits * (DIGIT_COLS * cell + spacing) - spacing;
+    int p2_numbers_x = p2_square_x - (TRON_BLOCK_SIZE) - numberWidth;
+    int p2_numbers_y = HUD_PADDING_PX;
+    drawNumberPx(p2_numbers_x, p2_numbers_y, p2_score, COLOR_P2_TRAIL);
+}
+
 // ============== FUNCIONES AUXILIARES ==============
 
 /**
@@ -36,7 +145,8 @@ static void getScreenDimensions(void) {
  * @brief Dibuja un bloque en pantalla
  */
 static void drawBlock(int x, int y, uint64_t color) {
-    sys_draw_rectangle(color, x, y, TRON_BLOCK_SIZE, TRON_BLOCK_SIZE);
+    // Desplazar el campo de juego hacia abajo para reservar el HUD arriba
+    sys_draw_rectangle(color, x, y + HUD_HEIGHT_PX, TRON_BLOCK_SIZE, TRON_BLOCK_SIZE);
 }
 
 /**
@@ -74,7 +184,8 @@ void initTron(GameState *game) {
     game->screen_width = SCREEN_WIDTH;
     game->screen_height = SCREEN_HEIGHT;
     game->grid_width = SCREEN_WIDTH / TRON_BLOCK_SIZE;
-    game->grid_height = SCREEN_HEIGHT / TRON_BLOCK_SIZE;
+    // Reservamos HUD_HEIGHT_PX en la parte superior para el marcador
+    game->grid_height = (SCREEN_HEIGHT - HUD_HEIGHT_PX) / TRON_BLOCK_SIZE;
     
     // Inicializar Jugador 1 (Cyan) - lado izquierdo
     game->player1.pos.x = game->grid_width / 4;
@@ -358,6 +469,8 @@ void runTronGame(GameState *game) {
     
     // Dibujar posiciones iniciales de ambos jugadores
     drawInitialTrail(game);
+    // Dibujar marcador inicial
+    drawHUD(game);
     
     // Loop principal del juego
     while (!game->game_over || game->winner == 0 || game->winner == 1 || game->winner == 2) {
@@ -393,6 +506,8 @@ void runTronGame(GameState *game) {
         
         // Renderizar solo las nuevas posiciones (no borrar ni redibujar todo)
         drawTron(game);
+        // Actualizar HUD/Scoreboard
+        drawHUD(game);
         
         // Control de velocidad
         sys_sleep(TRON_SPEED);
