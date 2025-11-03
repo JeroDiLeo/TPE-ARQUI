@@ -22,7 +22,7 @@ uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, 
 #endif
 
     // Validar número de syscall
-    if(rax < 0 || rax > SYS_GETBGCOLOR) {
+    if(rax < 0 || rax > SYS_WAITKEY) {
         ncPrint("ERROR: Invalid syscall number\n");
         return -1;
     }
@@ -55,6 +55,7 @@ uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, 
         case SYS_SETBGCOLOR: return sys_setBgColor(rdi);
         case SYS_GETBGCOLOR : return sys_getBgColor();
         case SYS_EXIT : return sys_exit((int)rdi);
+        case SYS_WAITKEY : return sys_waitKey();
         default: return 0;
     }
 }

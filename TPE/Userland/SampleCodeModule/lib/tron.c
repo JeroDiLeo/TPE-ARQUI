@@ -458,11 +458,8 @@ void runTronGame(GameState *game) {
     sys_write(1, p2_controls, 32, COLOR_P2_TRAIL);
     sys_write(1, start_msg, 42, COLOR_TEXT);
     
-    // Esperar input para empezar
-    char dummy[2];
-    while (sys_read(0, dummy, 1) <= 0) {
-        sys_sleep(50);
-    }
+    // Esperar una tecla con interrupción de teclado (bloqueante)
+    (void)sys_wait_key();
     
     // Limpiar pantalla y empezar el juego
     sys_clear_screen();

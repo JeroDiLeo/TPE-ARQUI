@@ -14,6 +14,7 @@ GLOBAL _sys_playSound
 GLOBAL _sys_getbgcolor
 
 GLOBAL _sys_exit
+GLOBAL _sys_waitKey
 
 
 section .text
@@ -40,3 +41,4 @@ _sys_playSound: syscall 0x0B
 _sys_setBgColor : syscall 0x0C
 _sys_getbgcolor : syscall 0x0D
 _sys_exit: syscall 0x0E
+_sys_waitKey: syscall 0x0F

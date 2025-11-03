@@ -231,3 +231,14 @@ void resetExitFlag(void){
     shouldExit = 0;
     lastExitCode = 0;
 }
+
+// Bloquea hasta que haya una tecla en el buffer de teclado y la devuelve
+uint64_t sys_waitKey(){
+    char c = 0;
+    _sti();
+    while((c = kb_getchar()) == 0){
+        _hlt();
+    }
+    _cli();
+    return (uint64_t)(uint8_t)c;
+}
