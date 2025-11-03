@@ -249,7 +249,7 @@ void parse_and_execute(char *input, int * isExit) {
     
     // Si la posición Y volvió a 0, significa que hubo scroll/clear automático
     // y el comando perdió su output
-    if (y_before > 100 && y_after < 50 && retry_count == 0) {
+    if (y_before > 100 && y_after < 50 && retry_count == 0 && strcmp(argv_array[0], "tron") != 0) {
         // Guardar el comando para reejecutar
         strcpy(last_input, input);
         retry_count = 1;
