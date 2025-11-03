@@ -63,6 +63,7 @@ typedef struct {
 typedef struct {
     Player player1;
     Player player2;
+    int num_players;          // 1 = single player, 2 = two players
     int screen_width;
     int screen_height;
     int grid_width;             // Ancho en bloques

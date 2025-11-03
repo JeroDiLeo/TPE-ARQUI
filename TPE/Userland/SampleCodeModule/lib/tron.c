@@ -116,18 +116,20 @@ static void drawHUD(GameState *game) {
     int p1_y = HUD_PADDING_PX;
     drawNumberPx(p1_x, p1_y, p1_score, COLOR_P1_TRAIL);
 
-    // P2 a la derecha: cuadrado de color pegado al borde derecho
-    int p2_square_x = SCREEN_WIDTH - HUD_PADDING_PX - square;
-    sys_draw_rectangle(COLOR_P2_TRAIL, p2_square_x, HUD_PADDING_PX, square, square);
+    if (game->num_players == 2) {
+        // P2 a la derecha: cuadrado de color pegado al borde derecho
+        int p2_square_x = SCREEN_WIDTH - HUD_PADDING_PX - square;
+        sys_draw_rectangle(COLOR_P2_TRAIL, p2_square_x, HUD_PADDING_PX, square, square);
 
-    // Números de P2 a la izquierda del cuadrado
-    int cell = TRON_BLOCK_SIZE;
-    int spacing = cell;
-    int nDigits = digitsCount(p2_score);
-    int numberWidth = nDigits * (DIGIT_COLS * cell + spacing) - spacing;
-    int p2_numbers_x = p2_square_x - (TRON_BLOCK_SIZE) - numberWidth;
-    int p2_numbers_y = HUD_PADDING_PX;
-    drawNumberPx(p2_numbers_x, p2_numbers_y, p2_score, COLOR_P2_TRAIL);
+        // Números de P2 a la izquierda del cuadrado
+        int cell = TRON_BLOCK_SIZE;
+        int spacing = cell;
+        int nDigits = digitsCount(p2_score);
+        int numberWidth = nDigits * (DIGIT_COLS * cell + spacing) - spacing;
+        int p2_numbers_x = p2_square_x - (TRON_BLOCK_SIZE) - numberWidth;
+        int p2_numbers_y = HUD_PADDING_PX;
+        drawNumberPx(p2_numbers_x, p2_numbers_y, p2_score, COLOR_P2_TRAIL);
+    }
 }
 
 // ============== FUNCIONES AUXILIARES ==============
@@ -186,6 +188,11 @@ void initTron(GameState *game) {
     game->grid_width = SCREEN_WIDTH / TRON_BLOCK_SIZE;
     // Reservamos HUD_HEIGHT_PX en la parte superior para el marcador
     game->grid_height = (SCREEN_HEIGHT - HUD_HEIGHT_PX) / TRON_BLOCK_SIZE;
+
+    // Si no fue seteado, por defecto 2 jugadores
+    if (game->num_players != 1 && game->num_players != 2) {
+        game->num_players = 2;
+    }
     
     // Inicializar Jugador 1 (Cyan) - lado izquierdo
     game->player1.pos.x = game->grid_width / 4;
@@ -208,6 +215,12 @@ void initTron(GameState *game) {
     // Estado inicial del juego
     game->game_over = 0;
     game->winner = 0;
+
+    // Ajustes para modo 1 jugador
+    if (game->num_players == 1) {
+        game->player2.alive = 0;
+        game->player2.trail_length = 0;
+    }
 }
 
 void resetTron(GameState *game) {
@@ -239,15 +252,17 @@ void handleInput(GameState *game) {
             game->player1.dir = DIR_RIGHT;
         }
         
-        // Jugador 2 - IJKL (flechas simuladas)
-        else if (key == KEY_UP && game->player2.dir != DIR_DOWN) {
-            game->player2.dir = DIR_UP;
-        } else if (key == KEY_DOWN && game->player2.dir != DIR_UP) {
-            game->player2.dir = DIR_DOWN;
-        } else if (key == KEY_LEFT && game->player2.dir != DIR_RIGHT) {
-            game->player2.dir = DIR_LEFT;
-        } else if (key == KEY_RIGHT && game->player2.dir != DIR_LEFT) {
-            game->player2.dir = DIR_RIGHT;
+        // Jugador 2 - IJKL (solo en modo 2 jugadores)
+        else if (game->num_players == 2) {
+            if (key == KEY_UP && game->player2.dir != DIR_DOWN) {
+                game->player2.dir = DIR_UP;
+            } else if (key == KEY_DOWN && game->player2.dir != DIR_UP) {
+                game->player2.dir = DIR_DOWN;
+            } else if (key == KEY_LEFT && game->player2.dir != DIR_RIGHT) {
+                game->player2.dir = DIR_LEFT;
+            } else if (key == KEY_RIGHT && game->player2.dir != DIR_LEFT) {
+                game->player2.dir = DIR_RIGHT;
+            }
         }
         
         // Controles del juego
@@ -309,33 +324,45 @@ void updateTron(GameState *game) {
         return;
     }
     
-    // Verificar colisiones ANTES de mover
-    int p1_collision = checkCollision(game, &game->player1);
-    int p2_collision = checkCollision(game, &game->player2);
-    
-    // Determinar ganador
-    if (p1_collision && p2_collision) {
-        // Empate - ambos chocan simultáneamente
-        game->player1.alive = 0;
-        game->player2.alive = 0;
-        game->game_over = 1;
-        game->winner = 0;
-        sys_play_sound(400, 200);  // Beep de empate
-        return;
-    } else if (p1_collision) {
-        // Jugador 2 gana
-        game->player1.alive = 0;
-        game->game_over = 1;
-        game->winner = 2;
-        sys_play_sound(800, 300);  // Beep de victoria
-        return;
-    } else if (p2_collision) {
-        // Jugador 1 gana
-        game->player2.alive = 0;
-        game->game_over = 1;
-        game->winner = 1;
-        sys_play_sound(800, 300);  // Beep de victoria
-        return;
+    if (game->num_players == 1) {
+        // Solo verificar a P1
+        int p1_collision = checkCollision(game, &game->player1);
+        if (p1_collision) {
+            game->player1.alive = 0;
+            game->game_over = 1;
+            game->winner = 0;  // sin ganador en 1P
+            sys_play_sound(400, 200);
+            return;
+        }
+    } else {
+        // Verificar colisiones ANTES de mover
+        int p1_collision = checkCollision(game, &game->player1);
+        int p2_collision = checkCollision(game, &game->player2);
+        
+        // Determinar ganador
+        if (p1_collision && p2_collision) {
+            // Empate - ambos chocan simultáneamente
+            game->player1.alive = 0;
+            game->player2.alive = 0;
+            game->game_over = 1;
+            game->winner = 0;
+            sys_play_sound(400, 200);  // Beep de empate
+            return;
+        } else if (p1_collision) {
+            // Jugador 2 gana
+            game->player1.alive = 0;
+            game->game_over = 1;
+            game->winner = 2;
+            sys_play_sound(800, 300);  // Beep de victoria
+            return;
+        } else if (p2_collision) {
+            // Jugador 1 gana
+            game->player2.alive = 0;
+            game->game_over = 1;
+            game->winner = 1;
+            sys_play_sound(800, 300);  // Beep de victoria
+            return;
+        }
     }
     
     // Mover Jugador 1
@@ -355,7 +382,7 @@ void updateTron(GameState *game) {
     }
     
     // Mover Jugador 2
-    if (game->player2.alive) {
+    if (game->num_players == 2 && game->player2.alive) {
         switch (game->player2.dir) {
             case DIR_UP:    game->player2.pos.y--; break;
             case DIR_DOWN:  game->player2.pos.y++; break;
@@ -383,7 +410,7 @@ void drawTron(GameState *game) {
     }
     
     // Dibujar solo la NUEVA posición del Jugador 2 (no redibujar todo)
-    if (game->player2.alive && game->player2.trail_length > 0) {
+    if (game->num_players == 2 && game->player2.alive && game->player2.trail_length > 0) {
         int idx = game->player2.trail_length - 1;  // Última posición añadida
         int px = game->player2.trail[idx].x * TRON_BLOCK_SIZE;
         int py = game->player2.trail[idx].y * TRON_BLOCK_SIZE;
@@ -399,10 +426,12 @@ void drawInitialTrail(GameState *game) {
         drawBlock(px, py, game->player1.color);
     }
     
-    for (int i = 0; i < game->player2.trail_length; i++) {
-        int px = game->player2.trail[i].x * TRON_BLOCK_SIZE;
-        int py = game->player2.trail[i].y * TRON_BLOCK_SIZE;
-        drawBlock(px, py, game->player2.color);
+    if (game->num_players == 2) {
+        for (int i = 0; i < game->player2.trail_length; i++) {
+            int px = game->player2.trail[i].x * TRON_BLOCK_SIZE;
+            int py = game->player2.trail[i].y * TRON_BLOCK_SIZE;
+            drawBlock(px, py, game->player2.color);
+        }
     }
 }
 
@@ -416,6 +445,8 @@ void drawGameOver(GameState *game) {
     
     if (game->winner == -1) {
         msg2 = "Gracias por jugar!\n";
+    } else if (game->num_players == 1) {
+        msg2 = "Fin de la partida (1 Jugador)\n\n";
     } else if (game->winner == 0) {
         msg2 = "EMPATE!\n\n";
     } else if (game->winner == 1) {
@@ -427,18 +458,18 @@ void drawGameOver(GameState *game) {
     const char *msg3 = "Presiona R para reiniciar\n";
     const char *msg4 = "Presiona Q para salir\n";
     
-    sys_write(1, msg1, 20, COLOR_TEXT);
+    puts(msg1, COLOR_TEXT);
     
     if (game->winner == 1) {
-        sys_write(1, msg2, 25, COLOR_P1_TRAIL);
+        puts(msg2, COLOR_P1_TRAIL);
     } else if (game->winner == 2) {
-        sys_write(1, msg2, 2, COLOR_P2_TRAIL);
+        puts(msg2, COLOR_P2_TRAIL);
     } else {
-        sys_write(1, msg2, 20, COLOR_TEXT);
+        puts(msg2, COLOR_TEXT);
     }
     
-    sys_write(1, msg3, 27, COLOR_TEXT);
-    sys_write(1, msg4, 24, COLOR_TEXT);
+    puts(msg3, COLOR_TEXT);
+    puts(msg4, COLOR_TEXT);
 }
 
 // ============== GAME LOOP ==============
@@ -451,19 +482,33 @@ void runTronGame(GameState *game) {
     const char *title = "=== TRON LIGHT CYCLES ===\n\n";
     const char *p1_controls = "Jugador 1 (CYAN): W/A/S/D\n";
     const char *p2_controls = "Jugador 2 (MAGENTA): I/J/K/L\n\n";
-    const char *start_msg = "Presiona cualquier tecla para empezar...\n";
+    const char *mode_msg = "Presiona 1 (1 jugador) o 2 (2 jugadores)\n";
+    const char *start_msg = "Luego, presiona cualquier tecla para empezar...\n";
     
     sys_write(1, title, 28, COLOR_TEXT);
     sys_write(1, p1_controls, 27, COLOR_P1_TRAIL);
     sys_write(1, p2_controls, 32, COLOR_P2_TRAIL);
-    sys_write(1, start_msg, 42, COLOR_TEXT);
+    puts(mode_msg, COLOR_TEXT);
     
-    // Esperar una tecla con interrupción de teclado (bloqueante)
-    (void)sys_wait_key();
+    // Selección de modo: esperar 1 ó 2
+    char sel = 0;
+    while (1) {
+        sel = (char)sys_wait_key();
+        if (sel == '1' || sel == '2') break;
+    }
+    game->num_players = (sel == '1') ? 1 : 2;
+    
+    // En 1 jugador pedimos confirmación; en 2 jugadores comienza directo
+    if (game->num_players == 1) {
+        puts(start_msg, COLOR_TEXT);
+        (void)sys_wait_key();
+    }
     
     // Limpiar pantalla y empezar el juego
     sys_clear_screen();
     
+    // Re-inicializar según modo elegido y dibujar
+    initTron(game);
     // Dibujar posiciones iniciales de ambos jugadores
     drawInitialTrail(game);
     // Dibujar marcador inicial
@@ -483,10 +528,14 @@ void runTronGame(GameState *game) {
         if (game->game_over) {
             drawGameOver(game);
             
-            // Esperar input para reiniciar o salir
+            // Esperar input para reiniciar o salir (bloqueante, sin interferencias)
             while (game->game_over && game->winner != -1) {
-                handleInput(game);
-                sys_sleep(100);
+                char k = (char)sys_wait_key();
+                if (k == KEY_R) {
+                    resetTron(game);
+                } else if (k == KEY_Q || k == KEY_ESC) {
+                    game->winner = -1;
+                }
             }
             
             // Si se reinició, limpiar pantalla y redibujar posiciones iniciales
