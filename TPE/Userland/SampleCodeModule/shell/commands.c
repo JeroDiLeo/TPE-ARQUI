@@ -279,8 +279,15 @@ static int cmd_inforeg(int argc, char **argv) {
     #define TOTAL_REGS 17
     uint64_t registers[TOTAL_REGS];
     
+    // Initialize array to known values
+    for(int i = 0; i < TOTAL_REGS; i++) {
+        registers[i] = 0xFFFFFFFFFFFFFFFF;
+    }
+    
     // Obtener registros capturados
     uint64_t result = sys_get_registers(registers);
+    
+    printf("Syscall result: %d\n", result);
     
     if (result == 0) {
         puts("No hay registros capturados. Presione Ctrl+R para capturar el estado actual.\n", ERROR_COLOR);
@@ -301,7 +308,19 @@ static int cmd_inforeg(int argc, char **argv) {
     
     // Imprimir registros en formato de 2 columnas
     for (int i = 0; i < TOTAL_REGS; i++) {
-        printf("%s: %016" PRIx64, register_names[i], registers[i]);
+        char buffer[32];
+        uint64_t value = registers[i];
+        
+        // Convert to hex manually
+        char hex[] = "0123456789ABCDEF";
+        buffer[0] = '0';
+        buffer[1] = 'x';
+        for(int j = 0; j < 16; j++) {
+            buffer[2+j] = hex[(value >> (60 - j*4)) & 0xF];
+        }
+        buffer[18] = '\0';
+        
+        printf("%s: %s", register_names[i], buffer);
         
         // Dos columnas, salto de línea cada 2 registros
         if (i % 2 == 1) {
