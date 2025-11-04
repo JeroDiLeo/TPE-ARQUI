@@ -144,6 +144,46 @@ static void getScreenDimensions(void) {
 }
 
 /**
+ * @brief Dibuja los bordes del área de juego
+ */
+static void drawBorders(GameState *game) {
+    // Color del borde: amarillo brillante (estilo Tron clásico)
+    uint64_t border_color = 0xFFFF00;  // Amarillo brillante
+    int border_thickness = TRON_BLOCK_SIZE;
+    
+    int game_area_width = game->grid_width * TRON_BLOCK_SIZE;
+    int game_area_height = game->grid_height * TRON_BLOCK_SIZE;
+    
+    // Borde superior (debajo del HUD)
+    sys_draw_rectangle(border_color, 
+                      0, 
+                      HUD_HEIGHT_PX, 
+                      game_area_width, 
+                      border_thickness);
+    
+    // Borde inferior
+    sys_draw_rectangle(border_color, 
+                      0, 
+                      HUD_HEIGHT_PX + game_area_height - border_thickness, 
+                      game_area_width, 
+                      border_thickness);
+    
+    // Borde izquierdo
+    sys_draw_rectangle(border_color, 
+                      0, 
+                      HUD_HEIGHT_PX, 
+                      border_thickness, 
+                      game_area_height);
+    
+    // Borde derecho
+    sys_draw_rectangle(border_color, 
+                      game_area_width - border_thickness, 
+                      HUD_HEIGHT_PX, 
+                      border_thickness, 
+                      game_area_height);
+}
+
+/**
  * @brief Dibuja un bloque en pantalla
  */
 static void drawBlock(int x, int y, uint64_t color) {
@@ -504,6 +544,8 @@ void runTronGame(GameState *game) {
     
     // Re-inicializar según modo elegido y dibujar
     initTron(game);
+    // Dibujar bordes del área de juego
+    drawBorders(game);
     // Dibujar posiciones iniciales de ambos jugadores
     drawInitialTrail(game);
     // Dibujar marcador inicial
@@ -536,6 +578,7 @@ void runTronGame(GameState *game) {
             // Si se reinició, limpiar pantalla y redibujar posiciones iniciales
             if (!game->game_over) {
                 sys_clear_screen();
+                drawBorders(game);
                 drawInitialTrail(game);
             }
             
