@@ -149,7 +149,7 @@ _getSnapshot:
 %macro exceptionHandlerMacro 1
     ; Detectar si la excepción proviene de userland o kernel
     ; 1) Si CPL=3 => seguro userland (stack switch: frame incluye SS:RSP)
-    ; 2) Si CPL!=3, pero RIP ∈ [0x400000,0x600000) => userland en CPL0
+    ; 2) Si CPL!=3, pero RIP pertenece [0x400000,0x600000) => userland en CPL0
     ; 3) Caso contrario => kernel
 
     mov  rbx, [rsp + 0]         ; RIP

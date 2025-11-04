@@ -51,7 +51,7 @@ typedef struct vbe_mode_info_structure * vbe_mode_info_ptr;
 static const volatile vbe_mode_info_ptr vbe_mode_info = (vbe_mode_info_ptr) 0x0000000000005C00;
 static volatile int scale = DEFAULT_SCALE;
 
-static void drawScaledPixel(uint32_t hexColor, uint64_t x, uint64_t y);
+static void putPixel(uint32_t hexColor, uint64_t x, uint64_t y);
 
 int setScale(uint8_t newScale){
     if(newScale >= MIN_SCALE && newScale <= MAX_SCALE){
@@ -103,7 +103,7 @@ void drawPixel(uint32_t hexColor, uint64_t x, uint64_t y){
     
 }
 
-static void drawScaledPixel(uint32_t hexColor, uint64_t x, uint64_t y){
+static void putPixel(uint32_t hexColor, uint64_t x, uint64_t y){
     for(uint64_t i = 0; i < (uint64_t)scale; i++){
         for(uint64_t j = 0; j < (uint64_t)scale; j++){
             drawPixel(hexColor, x + i, y + j);
@@ -130,9 +130,9 @@ void drawChar(char c, uint32_t charColor, uint32_t bgColor, uint64_t x, uint64_t
         for(uint64_t j = 0; j < getFontWidth(); j++){
             // Changed bit extraction to read from left to right
             if((charBitmap[i] >> j) & 1){
-                drawScaledPixel(charColor, x, y);
+                putPixel(charColor, x, y);
             } else{
-                drawScaledPixel(bgColor, x, y);
+                putPixel(bgColor, x, y);
             }
             x += scale;
         }
