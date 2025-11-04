@@ -141,8 +141,8 @@ static struct Tcommand cmd_exit_s = {
 static struct Tcommand cmd_tron_s = {
     .name = "tron",
     .handler = cmd_tron,
-    .description = "Jugar Tron (WASD vs IJKL, ESC para salir)",
-    .usage = "tron"
+    .description = "Jugar Tron (WASD vs IJKL, ESC para salir). Use 'tron fps' para mostrar FPS.",
+    .usage = "tron [fps]"
 };
 
 static struct Tcommand cmd_beep_s = {
@@ -433,8 +433,16 @@ static int cmd_exit(int argc, char **argv) {
 }
 
 static int cmd_tron(int argc, char **argv) {
-    // puts("Iniciando juego Tron...\n", INFO_COLOR);
+    // Modo FPS opcional: "tron fps"
+    if (argc >= 2 && strcmp(argv[1], "fps") == 0) {
+        tron_set_show_fps(1);
+    } else {
+        tron_set_show_fps(0);
+    }
+
     tron_game();
+    // Restablecer flag al salir del juego
+    tron_set_show_fps(0);
     // Limpiar pantalla al volver
     sys_clear_screen();
     // puts("Juego terminado. Bienvenido de vuelta a la shell.\n", COLOR_CYAN);

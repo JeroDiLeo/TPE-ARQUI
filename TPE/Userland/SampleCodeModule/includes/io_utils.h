@@ -86,8 +86,20 @@ void itoa(int value, char *buffer, int base);
  */
 void itoa_hex(uint64_t value, char *buffer);
 
-// ============== FORMATTED OUTPUT ==============
+// ============== FORMATTED I/O ==============
 
+/**
+ * @brief Imprime texto formateado con soporte para %s, %d, %c, %x
+ * @param format Cadena de formato
+ * @return Cantidad de caracteres impresos
+ */
 int printf(const char *format, ...);
+
+/**
+ * @brief Lee entrada formateada con soporte para %d, %s, %c, %x
+ * @param format Cadena de formato
+ * @return Cantidad de elementos leídos exitosamente
+ */
+int scanf(const char *format, ...);
 
 #endif

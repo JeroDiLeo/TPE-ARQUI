@@ -10,6 +10,7 @@
 #include "tron.h"
 #include "shell.h"
 #include "commands.h"
+#include "tronLogo.h"
 #include <stddef.h>
 
 // ============== CONSTANTES ==============
@@ -64,10 +65,11 @@ void shell_main(void) {
     
     // Banner de bienvenida
     puts("╔════════════════════════════════════════╗\n", COLOR_CYAN);
-    puts("║       Bienvenido a JerOS Shell        ║\n", COLOR_CYAN);
-    puts("║       Arquitectura de Computadoras    ║\n", COLOR_CYAN);
+    puts("║       Bienvenido al petes Shell        ║\n", COLOR_CYAN);
+    puts("║       Arquitectura de Computadoras     ║\n", COLOR_CYAN);
     puts("╚════════════════════════════════════════╝\n", COLOR_CYAN);
     puts("\nEscriba 'help' para ver comandos disponibles\n", COLOR_WHITE);
+
 
     int isExit = 0;
     // Loop principal de la shell

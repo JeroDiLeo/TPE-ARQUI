@@ -61,6 +61,8 @@ int isDigit(char c){
     }
     return 0;
 }
+
+
 //=================Funciones Importantes============================
 
 //Printf  la vamos usar para imprimir los regs en pantalla, para toda la shell y tambien en el juego seguro
@@ -415,6 +417,183 @@ void itoa_hex(uint64_t value, char *buffer) {
 // }
 
 // ============== FORMATTED OUTPUT ==============
+
+// ============== FORMATTED INPUT ==============
+
+/**
+ * @brief Lee entrada formateada (scanf)
+ * @param format Cadena de formato con especificadores %d, %s, %c, %x
+ * @return Cantidad de elementos leídos exitosamente
+ * 
+ * Especificadores soportados:
+ * - %d: Entero decimal
+ * - %x: Entero hexadecimal (con o sin 0x)
+ * - %s: String (hasta espacio/newline)
+ * - %c: Un solo carácter
+ */
+int scanf(const char *format, ...) {
+    va_list arguments;
+    va_start(arguments, format);
+    
+    char input_buffer[256];
+    int input_index = 0;
+    int items_read = 0;
+    int format_index = 0;
+    
+    // Leer toda la línea de entrada
+    int line_length = read_line(input_buffer, sizeof(input_buffer));
+    if (line_length == 0) {
+        va_end(arguments);
+        return 0;
+    }
+    
+    // Procesar formato
+    while (format[format_index] != '\0' && input_index < line_length) {
+        // Saltar espacios en blanco en el formato
+        if (format[format_index] == ' ' || format[format_index] == '\t') {
+            format_index++;
+            continue;
+        }
+        
+        // Saltar espacios en blanco en la entrada
+        while (input_index < line_length && 
+               (input_buffer[input_index] == ' ' || input_buffer[input_index] == '\t')) {
+            input_index++;
+        }
+        
+        // Si encontramos un especificador de formato
+        if (format[format_index] == '%' && format[format_index + 1] != '\0') {
+            format_index++; // Saltar el '%'
+            
+            switch (format[format_index]) {
+                case 'd': { // Entero decimal
+                    int *int_ptr = va_arg(arguments, int *);
+                    int sign = 1;
+                    int value = 0;
+                    int has_digits = 0;
+                    
+                    // Manejar signo
+                    if (input_buffer[input_index] == '-') {
+                        sign = -1;
+                        input_index++;
+                    } else if (input_buffer[input_index] == '+') {
+                        input_index++;
+                    }
+                    
+                    // Leer dígitos
+                    while (input_index < line_length && isDigit(input_buffer[input_index])) {
+                        value = value * 10 + (input_buffer[input_index] - '0');
+                        input_index++;
+                        has_digits = 1;
+                    }
+                    
+                    if (has_digits) {
+                        *int_ptr = sign * value;
+                        items_read++;
+                    } else {
+                        va_end(arguments);
+                        return items_read;
+                    }
+                    break;
+                }
+                
+                case 'x': { // Entero hexadecimal
+                    uint64_t *hex_ptr = va_arg(arguments, uint64_t *);
+                    uint64_t value = 0;
+                    int has_digits = 0;
+                    
+                    // Saltar prefijo "0x" si existe
+                    if (input_index < line_length - 1 && 
+                        input_buffer[input_index] == '0' && 
+                        (input_buffer[input_index + 1] == 'x' || input_buffer[input_index + 1] == 'X')) {
+                        input_index += 2;
+                    }
+                    
+                    // Leer dígitos hexadecimales
+                    while (input_index < line_length) {
+                        char c = input_buffer[input_index];
+                        if (c >= '0' && c <= '9') {
+                            value = value * 16 + (c - '0');
+                            has_digits = 1;
+                        } else if (c >= 'a' && c <= 'f') {
+                            value = value * 16 + (c - 'a' + 10);
+                            has_digits = 1;
+                        } else if (c >= 'A' && c <= 'F') {
+                            value = value * 16 + (c - 'A' + 10);
+                            has_digits = 1;
+                        } else {
+                            break;
+                        }
+                        input_index++;
+                    }
+                    
+                    if (has_digits) {
+                        *hex_ptr = value;
+                        items_read++;
+                    } else {
+                        va_end(arguments);
+                        return items_read;
+                    }
+                    break;
+                }
+                
+                case 's': { // String (hasta espacio o fin)
+                    char *str_ptr = va_arg(arguments, char *);
+                    int str_index = 0;
+                    
+                    // Leer hasta espacio, tab o fin
+                    while (input_index < line_length && 
+                           input_buffer[input_index] != ' ' && 
+                           input_buffer[input_index] != '\t' &&
+                           input_buffer[input_index] != '\0') {
+                        str_ptr[str_index++] = input_buffer[input_index++];
+                    }
+                    
+                    if (str_index > 0) {
+                        str_ptr[str_index] = '\0';
+                        items_read++;
+                    } else {
+                        va_end(arguments);
+                        return items_read;
+                    }
+                    break;
+                }
+                
+                case 'c': { // Un solo carácter
+                    char *char_ptr = va_arg(arguments, char *);
+                    
+                    if (input_index < line_length) {
+                        *char_ptr = input_buffer[input_index++];
+                        items_read++;
+                    } else {
+                        va_end(arguments);
+                        return items_read;
+                    }
+                    break;
+                }
+                
+                default:
+                    // Especificador no reconocido
+                    format_index++;
+                    continue;
+            }
+            
+            format_index++;
+        } else {
+            // Carácter literal en el formato (debe coincidir con la entrada)
+            if (format[format_index] == input_buffer[input_index]) {
+                format_index++;
+                input_index++;
+            } else {
+                // No coincide, terminar
+                break;
+            }
+        }
+    }
+    
+    va_end(arguments);
+    return items_read;
+}
 
 
 

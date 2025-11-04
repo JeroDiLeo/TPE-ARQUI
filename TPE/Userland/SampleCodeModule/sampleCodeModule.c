@@ -1,5 +1,6 @@
 #include "shell.h"
 #include "syscalls.h"
+#include "tronLogo.h"
 
 
 int main() {

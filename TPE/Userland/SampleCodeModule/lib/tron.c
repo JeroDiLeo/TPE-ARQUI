@@ -16,10 +16,26 @@
 #include "tron.h"
 #include "syscalls.h"
 #include "io_utils.h"
+#include "time.h"
+#include "tronLogo.h"
 
 // Variables globales para información de pantalla
 static int SCREEN_WIDTH = 1024;
 static int SCREEN_HEIGHT = 768;
+
+// Flag para mostrar FPS en el HUD (configurable desde la shell)
+static int SHOW_FPS = 0;
+
+// Contadores para el cálculo de FPS (actualizados una vez por segundo)
+static int FPS_LAST_VALUE = 0;
+static int FPS_FRAMES_THIS_SECOND = 0;
+static int FPS_PREV_SECOND = -1;
+
+// Caché para evitar redibujar el HUD innecesariamente (reduce parpadeo)
+static int CACHED_P1_SCORE = -1;
+static int CACHED_P2_SCORE = -1;
+static int CACHED_FPS = -1;
+static int HUD_NEEDS_FULL_REDRAW = 1;
 
 // ================= HUD / SCOREBOARD =================
 // Altura reservada para el HUD (en píxeles)
@@ -41,6 +57,12 @@ static const uint8_t DIGITS[10][DIGIT_ROWS] = {
     {0b111, 0b101, 0b111, 0b101, 0b111}, // 8
     {0b111, 0b101, 0b111, 0b001, 0b111}  // 9
 };
+
+// Letras necesarias para "FPS:" en fuente 3x5
+static const uint8_t GLYPH_F[DIGIT_ROWS]     = {0b111, 0b100, 0b111, 0b100, 0b100};
+static const uint8_t GLYPH_P[DIGIT_ROWS]     = {0b111, 0b101, 0b111, 0b100, 0b100};
+static const uint8_t GLYPH_S[DIGIT_ROWS]     = {0b111, 0b100, 0b111, 0b001, 0b111};
+static const uint8_t GLYPH_COLON[DIGIT_ROWS] = {0b010, 0b000, 0b010, 0b000, 0b010};
 
 // Dibuja un dígito 3x5 en (x, y) en píxeles
 static void drawDigitPx(int x, int y, int digit, uint64_t color) {
@@ -64,6 +86,74 @@ static void drawDigitPx(int x, int y, int digit, uint64_t color) {
                                    cell);
             }
         }
+    }
+}
+
+// Dibuja un glifo 3xN (o 1xN para ':') en (x, y) en píxeles
+static void drawGlyphPx(int x, int y, const uint8_t *rows, int cols, uint64_t color) {
+    if (rows == 0 || cols <= 0) return;
+    int cell = TRON_BLOCK_SIZE;
+    for (int r = 0; r < DIGIT_ROWS; r++) {
+        for (int c = 0; c < cols; c++) {
+            if ((rows[r] >> (cols - 1 - c)) & 1) {
+                sys_draw_rectangle(color,
+                                   x + c * cell,
+                                   y + r * cell,
+                                   cell,
+                                   cell);
+            } else {
+                sys_draw_rectangle(COLOR_BACKGROUND,
+                                   x + c * cell,
+                                   y + r * cell,
+                                   cell,
+                                   cell);
+            }
+        }
+    }
+}
+
+// Dibuja un caracter de la palabra "FPS:" (y espacio) con 3x5 celdas
+// Devuelve el ancho en píxeles utilizado
+static int drawSmallCharPx(int x, int y, char ch, uint64_t color) {
+    int cell = TRON_BLOCK_SIZE;
+    int spacing = cell;
+    switch (ch) {
+        case 'F': drawGlyphPx(x, y, GLYPH_F, 3, color); return 3*cell + spacing;
+        case 'P': drawGlyphPx(x, y, GLYPH_P, 3, color); return 3*cell + spacing;
+        case 'S': drawGlyphPx(x, y, GLYPH_S, 3, color); return 3*cell + spacing;
+        case ':': drawGlyphPx(x, y, GLYPH_COLON, 1, color); return 1*cell + spacing;
+        case ' ': default:
+            // espacio: sólo limpiar el área equivalente a 2 celdas de ancho
+            sys_draw_rectangle(COLOR_BACKGROUND, x, y, 2*cell, DIGIT_ROWS*cell);
+            return 2*cell + spacing;
+    }
+}
+
+static int measureSmallTextPx(const char *text) {
+    if (!text) return 0;
+    int cell = TRON_BLOCK_SIZE;
+    int spacing = cell;
+    int width = 0;
+    for (const char *p = text; *p; p++) {
+        switch (*p) {
+            case 'F':
+            case 'P':
+            case 'S':
+                width += 3*cell + spacing; break;
+            case ':':
+                width += 1*cell + spacing; break;
+            case ' ': default:
+                width += 2*cell + spacing; break;
+        }
+    }
+    if (width > 0) width -= spacing; // quitar último espaciado
+    return width;
+}
+
+static void drawSmallTextPx(int x, int y, const char *text, uint64_t color) {
+    if (!text) return;
+    for (const char *p = text; *p; p++) {
+        x += drawSmallCharPx(x, y, *p, color);
     }
 }
 
@@ -100,35 +190,94 @@ static void drawNumberPx(int x, int y, int value, uint64_t color) {
 }
 
 static void drawHUD(GameState *game) {
-    // Fondo del HUD
-    sys_draw_rectangle(COLOR_BACKGROUND, 0, 0, SCREEN_WIDTH, HUD_HEIGHT_PX);
-
     // Puntajes (basados en la longitud del rastro recorrido)
     int p1_score = (game->player1.trail_length > 0) ? (game->player1.trail_length - 1) : 0;
     int p2_score = (game->player2.trail_length > 0) ? (game->player2.trail_length - 1) : 0;
 
-    // Indicadores de color
+    // Solo redibujar si algo cambió o es la primera vez
+    int p1_changed = (p1_score != CACHED_P1_SCORE);
+    int p2_changed = (p2_score != CACHED_P2_SCORE);
+    int fps_changed = (FPS_LAST_VALUE != CACHED_FPS);
+    
+    // Si nada cambió, no hacer nada (evita parpadeo)
+    if (!HUD_NEEDS_FULL_REDRAW && !p1_changed && !p2_changed && !fps_changed) {
+        return;
+    }
+
+    // Dibujar fondo del HUD solo en redibujado completo
+    if (HUD_NEEDS_FULL_REDRAW) {
+        sys_draw_rectangle(COLOR_BACKGROUND, 0, 0, SCREEN_WIDTH, HUD_HEIGHT_PX);
+        HUD_NEEDS_FULL_REDRAW = 0;
+    }
+
     int square = TRON_BLOCK_SIZE * 3; // 12px con BLOCK_SIZE=4
-    sys_draw_rectangle(COLOR_P1_TRAIL, HUD_PADDING_PX, HUD_PADDING_PX, square, square);
+    int cell = TRON_BLOCK_SIZE;
+    int spacing = cell;
 
-    // Números de P1 (a la derecha del cuadrado)
-    int p1_x = HUD_PADDING_PX + square + (TRON_BLOCK_SIZE);
-    int p1_y = HUD_PADDING_PX;
-    drawNumberPx(p1_x, p1_y, p1_score, COLOR_P1_TRAIL);
+    // ==== JUGADOR 1 ====
+    if (p1_changed || CACHED_P1_SCORE == -1) {
+        // Limpiar área del P1 (cuadrado + números)
+        int p1_clear_width = square + (TRON_BLOCK_SIZE) + 150; // espacio generoso
+        sys_draw_rectangle(COLOR_BACKGROUND, HUD_PADDING_PX, HUD_PADDING_PX, 
+                          p1_clear_width, DIGIT_ROWS * cell);
+        
+        // Dibujar cuadrado de color
+        sys_draw_rectangle(COLOR_P1_TRAIL, HUD_PADDING_PX, HUD_PADDING_PX, square, square);
+        
+        // Dibujar números de P1
+        int p1_x = HUD_PADDING_PX + square + (TRON_BLOCK_SIZE);
+        int p1_y = HUD_PADDING_PX;
+        drawNumberPx(p1_x, p1_y, p1_score, COLOR_P1_TRAIL);
+        
+        CACHED_P1_SCORE = p1_score;
+    }
 
-    if (game->num_players == 2) {
-        // P2 a la derecha: cuadrado de color pegado al borde derecho
+    // ==== JUGADOR 2 ====
+    if (game->num_players == 2 && (p2_changed || CACHED_P2_SCORE == -1)) {
+        // Calcular posición de P2
         int p2_square_x = SCREEN_WIDTH - HUD_PADDING_PX - square;
-        sys_draw_rectangle(COLOR_P2_TRAIL, p2_square_x, HUD_PADDING_PX, square, square);
-
-        // Números de P2 a la izquierda del cuadrado
-        int cell = TRON_BLOCK_SIZE;
-        int spacing = cell;
         int nDigits = digitsCount(p2_score);
         int numberWidth = nDigits * (DIGIT_COLS * cell + spacing) - spacing;
         int p2_numbers_x = p2_square_x - (TRON_BLOCK_SIZE) - numberWidth;
+        
+        // Limpiar área del P2
+        int p2_clear_width = square + (TRON_BLOCK_SIZE) + 150; // espacio generoso
+        int p2_clear_x = SCREEN_WIDTH - HUD_PADDING_PX - p2_clear_width;
+        sys_draw_rectangle(COLOR_BACKGROUND, p2_clear_x, HUD_PADDING_PX, 
+                          p2_clear_width, DIGIT_ROWS * cell);
+        
+        // Dibujar cuadrado de color P2
+        sys_draw_rectangle(COLOR_P2_TRAIL, p2_square_x, HUD_PADDING_PX, square, square);
+        
+        // Dibujar números de P2
         int p2_numbers_y = HUD_PADDING_PX;
         drawNumberPx(p2_numbers_x, p2_numbers_y, p2_score, COLOR_P2_TRAIL);
+        
+        CACHED_P2_SCORE = p2_score;
+    }
+
+    // ==== FPS (CENTRO) ====
+    if (SHOW_FPS && (fps_changed || CACHED_FPS == -1)) {
+        const char *label = "FPS:";
+        int labelWidth = measureSmallTextPx(label);
+        int nDigits = digitsCount(FPS_LAST_VALUE);
+        int numberWidth = nDigits * (DIGIT_COLS * cell + spacing) - spacing;
+        int totalWidth = labelWidth + spacing + numberWidth;
+
+        int fps_x = (SCREEN_WIDTH - totalWidth) / 2;
+        int fps_y = HUD_PADDING_PX;
+
+        // Limpiar área del FPS (con margen extra para cambios en número de dígitos)
+        int digitW = (DIGIT_COLS * cell + spacing);
+        int clearWidth = labelWidth + spacing + 5 * digitW; // hasta 5 dígitos
+        int clear_x = (SCREEN_WIDTH - clearWidth) / 2;
+        sys_draw_rectangle(COLOR_BACKGROUND, clear_x, fps_y, clearWidth, DIGIT_ROWS * cell);
+
+        // Dibujar FPS
+        drawSmallTextPx(fps_x, fps_y, label, COLOR_TEXT);
+        drawNumberPx(fps_x + labelWidth + spacing, fps_y, FPS_LAST_VALUE, COLOR_TEXT);
+        
+        CACHED_FPS = FPS_LAST_VALUE;
     }
 }
 
@@ -265,6 +414,11 @@ void initTron(GameState *game) {
 
 void resetTron(GameState *game) {
     initTron(game);
+    // Resetear caché del HUD para forzar redibujado completo
+    CACHED_P1_SCORE = -1;
+    CACHED_P2_SCORE = -1;
+    CACHED_FPS = -1;
+    HUD_NEEDS_FULL_REDRAW = 1;
 }
 
 // ============== INPUT ==============
@@ -518,6 +672,7 @@ void runTronGame(GameState *game) {
     // Limpiar pantalla inicial
     sys_clear_screen();
     
+    print_tron_boot_logo();
     // Dibujar instrucciones iniciales
     const char *title = "=== TRON LIGHT CYCLES ===\n\n";
     const char *p1_controls = "Jugador 1 (CYAN): W/A/S/D\n";
@@ -551,6 +706,17 @@ void runTronGame(GameState *game) {
     // Dibujar marcador inicial
     drawHUD(game);
     
+    // Inicializar contadores de FPS
+    FPS_LAST_VALUE = 0;
+    FPS_FRAMES_THIS_SECOND = 0;
+    FPS_PREV_SECOND = getSeconds();
+    
+    // Resetear caché del HUD
+    CACHED_P1_SCORE = -1;
+    CACHED_P2_SCORE = -1;
+    CACHED_FPS = -1;
+    HUD_NEEDS_FULL_REDRAW = 1;
+
     // Loop principal del juego
     while (!game->game_over || game->winner == 0 || game->winner == 1 || game->winner == 2) {
         // Procesar input
@@ -595,6 +761,19 @@ void runTronGame(GameState *game) {
         
         // Control de velocidad
         sys_sleep(TRON_SPEED);
+
+        // Actualizar FPS una vez por segundo usando el RTC
+        if (SHOW_FPS) {
+            int cur = getSeconds();
+            if (cur == FPS_PREV_SECOND) {
+                FPS_FRAMES_THIS_SECOND++;
+            } else {
+                // nuevo segundo (maneja wrap 59->0 por comparación simple)
+                FPS_LAST_VALUE = FPS_FRAMES_THIS_SECOND;
+                FPS_FRAMES_THIS_SECOND = 1; // cuenta este frame en el nuevo segundo
+                FPS_PREV_SECOND = cur;
+            }
+        }
     }
     
     // Limpiar pantalla al salir
@@ -609,11 +788,15 @@ void tron_game(void) {
     
     // Inicializar el juego
     initTron(&game);
-    
     // Ejecutar el loop principal
     runTronGame(&game);
+
     
     // Mensaje de despedida
     const char *bye = "Gracias por jugar Tron!\n";
     sys_write(1, bye, 25, COLOR_TEXT);
+}
+
+void tron_set_show_fps(int show) {
+    SHOW_FPS = (show != 0);
 }

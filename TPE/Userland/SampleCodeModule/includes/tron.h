@@ -81,6 +81,12 @@ typedef struct {
 void tron_game(void);
 
 /**
+ * Habilita/deshabilita el overlay de FPS en el HUD.
+ * Llamar con 1 para mostrar, 0 para ocultar.
+ */
+void tron_set_show_fps(int show);
+
+/**
  * @brief Inicializa el estado del juego
  * @param game Puntero al estado del juego
  */
