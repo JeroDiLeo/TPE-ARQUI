@@ -15,6 +15,7 @@ GLOBAL _sys_getbgcolor
 
 GLOBAL _sys_exit
 GLOBAL _sys_waitKey
+GLOBAL _sys_getTicks
 
 
 section .text
@@ -42,3 +43,4 @@ _sys_setBgColor : syscall 0x0C
 _sys_getbgcolor : syscall 0x0D
 _sys_exit: syscall 0x0E
 _sys_waitKey: syscall 0x0F
+_sys_getTicks: syscall 0x10

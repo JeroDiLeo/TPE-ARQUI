@@ -12,36 +12,8 @@
 #include "commands.h"
 #include "time.h"
 #include "exceptions.h"
-#include <inttypes.h>
+#include "benchmark.h"
 #include <stddef.h>
-
-// ============== CONSTANTES ==============
-
-#define MAX_COMMAND_LENGTH 256
-#define MAX_ARGS 10
-#define MAXCMD 11
-
-// File descriptors
-#define STDIN  0
-#define STDOUT 1
-#define STDERR 2
-
-// Colores de la shell
-#define USER_COLOR       0x0000AFFF
-#define PROMPT_COLOR     0x005FD700
-#define CURSOR_COLOR     COLOR_CYAN
-#define SCREEN_COLOR     COLOR_BLACK
-#define WHITE            COLOR_WHITE
-#define ERROR_COLOR      0xFF0000
-#define INFO_COLOR       0x00FFFF
-
-// Configuración
-#define TAB_SIZE 4
-#define ESC 27
-#define DEFAULT_SCALE 1
-
-// Mensaje de bienvenida
-#define WELCOME_MSG "Bienvenido al MejorOS. Fecha: %02d/%02d/20%02d\n"
 
 // ============== ESTRUCTURAS ==============
 
@@ -67,11 +39,7 @@ static int cmd_invopcode(int argc, char **argv);
 static int cmd_exit(int argc, char **argv);
 static int cmd_tron(int argc, char **argv);
 static int cmd_beep(int argc, char **argv);
-
-// Funciones auxiliares de shell (declaradas en shell.c)
-// static int tokenize(char *input, char **argv, int max_args);
-// static Command find_command(const char *name);
-
+static int cmd_benchmark(int argc, char **argv);
 
 // ============== TABLA DE COMANDOS ==============
 
@@ -120,14 +88,14 @@ static struct Tcommand cmd_scale_s = {
 static struct Tcommand cmd_divzero_s = {
     .name = "divzero",
     .handler = cmd_divzero,
-    .description = "Prueba excepción de división por cero",
+    .description = "Prueba excepcion de division por cero",
     .usage = "divzero"
 };
 
 static struct Tcommand cmd_invopcode_s = {
     .name = "invopcode",
     .handler = cmd_invopcode,
-    .description = "Prueba excepción de opcode inválido",
+    .description = "Prueba excepcion de opcode invalido",
     .usage = "invopcode"
 };
 
@@ -152,6 +120,13 @@ static struct Tcommand cmd_beep_s = {
     .usage = "beep <frequency> <duration_ms>"
 };
 
+static struct Tcommand cmd_benchmark_s = {
+    .name = "benchmark",
+    .handler = cmd_benchmark,
+    .description = "Ejecuta benchmarks de rendimiento",
+    .usage = "benchmark [test_name|help]"
+};
+
 // Array de punteros a comandos (visible externamente)
 Command commands[MAXCMD] = {
     &cmd_help_s,
@@ -164,7 +139,8 @@ Command commands[MAXCMD] = {
     &cmd_invopcode_s,
     &cmd_exit_s,
     &cmd_tron_s,
-    &cmd_beep_s
+    &cmd_beep_s,
+    &cmd_benchmark_s
 };
 
 // ============== FUNCIONES AUXILIARES ==============
@@ -266,7 +242,8 @@ void parse_and_execute(char *input, int * isExit) {
     }
 }
 
-//=====COMANDOS=======(Agregar un cmd de exit)
+// ============== IMPLEMENTACIÓN DE COMANDOS ==============
+
 static int cmd_help(int argc, char **argv) {
     puts("Comandos disponibles:\n", INFO_COLOR);
     size_t cmd_count = sizeof(commands) / sizeof(commands[0]);
@@ -328,11 +305,6 @@ static int cmd_timezone(int argc, char **argv) {
 static int cmd_inforeg(int argc, char **argv) {
     #define TOTAL_REGS 17
     uint64_t registers[TOTAL_REGS];
-    
-    // // Initialize array to known values
-    // for(int i = 0; i < TOTAL_REGS; i++) {
-    //     registers[i] = 0xFFFFFFFFFFFFFFFF;
-    // }
     
     // Obtener registros capturados
     uint64_t result = sys_get_registers(registers);
@@ -411,7 +383,7 @@ static int cmd_scale(int argc, char **argv) {
     puts(".\n", INFO_COLOR);
     return 0;
 }
-//Estas dos son para REVISAR ademas desp del testearlas nose si son necesairas
+
 static int cmd_divzero(int argc, char **argv) {
     _divzero();
     return 0;
@@ -441,11 +413,8 @@ static int cmd_tron(int argc, char **argv) {
     }
 
     tron_game();
-    // Restablecer flag al salir del juego
     tron_set_show_fps(0);
-    // Limpiar pantalla al volver
     sys_clear_screen();
-    // puts("Juego terminado. Bienvenido de vuelta a la shell.\n", COLOR_CYAN);
     return 0;
 }
 
@@ -475,5 +444,23 @@ static int cmd_beep(int argc, char **argv) {
     sys_play_sound(frequency, duration);
     puts("Sonido reproducido!\n", INFO_COLOR);
     
+    return 0;
+}
+
+static int cmd_benchmark(int argc, char **argv) {
+    if (argc == 1) {
+        // Sin argumentos: ejecutar todos los benchmarks
+        run_benchmarks();
+    } else if (argc == 2) {
+        if (strcmp(argv[1], "help") == 0) {
+            benchmark_help();
+        } else {
+            // Ejecutar un benchmark específico
+            run_specific_benchmark(argv[1]);
+        }
+    } else {
+        puts("Uso: benchmark [test_name|help]\n", ERROR_COLOR);
+        return -1;
+    }
     return 0;
 }

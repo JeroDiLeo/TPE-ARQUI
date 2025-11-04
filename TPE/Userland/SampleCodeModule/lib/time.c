@@ -54,3 +54,7 @@ uint8_t getMonth() {
 uint32_t getYear() {
     return bcdToDec((uint8_t)_sys_getTime(YEAR_ARG)) + YEAR_REFERENCE;
 }
+
+uint64_t getTicks(void) {
+    return sys_get_ticks();
+}

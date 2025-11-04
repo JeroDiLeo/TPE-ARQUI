@@ -25,4 +25,7 @@ uint32_t getYear(void);
 void setTimezoneOffset(int8_t offset);
 int8_t getTimezoneOffset(void);
 
+// Get timer ticks for benchmarking
+uint64_t getTicks(void);
+
 #endif

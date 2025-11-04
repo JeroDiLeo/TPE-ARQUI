@@ -242,3 +242,7 @@ uint64_t sys_waitKey(){
     _cli();
     return (uint64_t)(uint8_t)c;
 }
+
+uint64_t sys_getTicks(){
+    return (uint64_t)ticks_elapsed();
+}

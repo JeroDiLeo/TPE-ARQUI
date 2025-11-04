@@ -18,6 +18,7 @@ extern uint64_t _sys_sleep(uint64_t milliseconds);
 extern uint64_t _sys_playSound(uint64_t frequency, uint64_t duration);
 extern void _sys_exit(int exitCode) __attribute__((noreturn));
 extern uint64_t _sys_waitKey(void);
+extern uint64_t _sys_getTicks(void);
  
 // Wrappers con nombres más amigables
 #define sys_read(fd, buf, count) _sys_read(fd, buf, count)
@@ -35,6 +36,7 @@ extern uint64_t _sys_waitKey(void);
 #define sys_exit(code) _sys_exit(code)
 // Bloquea hasta recibir una tecla desde el teclado (IRQ1)
 #define sys_wait_key() _sys_waitKey()
+#define sys_get_ticks() _sys_getTicks()
 
 
 

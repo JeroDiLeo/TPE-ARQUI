@@ -42,7 +42,8 @@ typedef enum {
     SYS_SETBGCOLOR,
     SYS_GETBGCOLOR, 
     SYS_EXIT,
-    SYS_WAITKEY
+    SYS_WAITKEY,
+    SYS_GETTICKS
 } SysCallID;
 
 // int size en vez de uint64_t para los syscalls de read y write
@@ -78,11 +79,13 @@ uint64_t sys_exit(int exitCode);
 
 uint64_t sys_waitKey();
 
+uint64_t sys_getTicks();
+
 int checkShouldExit(void);
 
 int getLastExitCode(void);
 
-void resetExitFlag(void);
+void resetExitFlag();
 
 
 

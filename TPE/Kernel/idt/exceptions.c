@@ -34,7 +34,7 @@ void launchExceptionScreen(int exceptionType, const char * msg) {
 
     //Seteo los nuevos parametros visuales para la pantalla de excepcion
     sys_setBgColor(BGCOLOR);
-    setScale(2);
+    setScale(2);  // Escala 1 para que todo entre en pantalla
     sys_clearScreen();//Limpio la pantalla
     sys_write(1, msg, strlen(msg), WHITE);
     dumpRegisters();
@@ -59,9 +59,9 @@ void launchExceptionScreen(int exceptionType, const char * msg) {
 void dumpRegisters(void) {
 
     static char * regNames[] = {
-        "RAX   ", "RBX   ", "RCX   ", "RDX   ", "RSI   ", "RDI   ", "RBP   ",
-        "R8    ", "R9    ", "R10   ", "R11   ", "R12   ", "R13   ", "R14   ",
-        "R15   ", "RIP   ", "RSP   ", "RFLAGS", "CS    ", "SS    "
+        "RAX", "RBX", "RCX", "RDX", "RSI", "RDI", "RBP",
+        "R8 ", "R9 ", "R10", "R11", "R12", "R13", "R14",
+        "R15", "RIP", "RSP", "RFL", "CS ", "SS "
     };
 
     //Cantidad de registros guardados en el snapshot
@@ -70,21 +70,25 @@ void dumpRegisters(void) {
     char buffer[17];
 
     for(int i = 0; i < regsAmount; i++) {
-        //Convierte el valor del registro a hexadecimal (esta funcion iria en el userland lib.c)
+        //Convierte el valor del registro a hexadecimal
         itoaHex(regs[i], buffer);
-        // Agrega padding
-        int pad=16 - strlen(buffer);
+        int pad = 16 - strlen(buffer);
+        
         //Imprime el nombre del registro y su valor
         sys_write(1, regNames[i], strlen(regNames[i]), WHITE);
+        sys_write(1, ":0x", 3, WHITE);
         
-        sys_write(1, ": 0x", 4, WHITE);
         //Imprime los 0s faltantes para completar 16 caracteres
         for(int j = 0; j < pad; j++) {
             sys_write(1, "0", 1, WHITE);
         }
-        //Imprime el valor del registro
         sys_write(1, buffer, strlen(buffer), WHITE);
-        sys_write(1, "\n", 1, WHITE);
-
+        
+        // 2 columnas: salto de línea cada 2 registros, sino espacio
+        if(i % 2 == 1) {
+            sys_write(1, "\n", 1, WHITE);
+        } else {
+            sys_write(1, " ", 1, WHITE);
+        }
     }
 }

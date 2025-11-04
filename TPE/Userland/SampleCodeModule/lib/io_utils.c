@@ -124,6 +124,18 @@ int printf(const char *format, ...) {
             }
             
             // Procesar el tipo de formato
+            // Verificar modificadores 'l' y 'll'
+            int long_mod = 0;  // 1 para 'l', 2 para 'll'
+            
+            if (format[i] == 'l') {
+                long_mod = 1;
+                i++;
+                if (format[i] == 'l') {
+                    long_mod = 2;
+                    i++;
+                }
+            }
+            
             switch (format[i]) {
                 case 's': {
                     const char *string_arg = va_arg(arguments, const char *);
@@ -135,6 +147,54 @@ int printf(const char *format, ...) {
                 case 'd': {
                     int decimal_number = va_arg(arguments, int);
                     itoa(decimal_number, conversion_buffer, 10);
+                    
+                    if (width > 0) {
+                        char pad_char = zero_pad ? '0' : ' ';
+                        print_with_padding(conversion_buffer, width, pad_char, &printed_chars);
+                    } else {
+                        puts(conversion_buffer, COLOR_WHITE);
+                        printed_chars += strlen(conversion_buffer);
+                    }
+                    break;
+                }
+                
+                case 'u': {
+                    uint64_t unsigned_number;
+                    
+                    if (long_mod == 2) {
+                        // %llu - unsigned long long
+                        unsigned_number = va_arg(arguments, uint64_t);
+                    } else if (long_mod == 1) {
+                        // %lu - unsigned long
+                        unsigned_number = va_arg(arguments, unsigned long);
+                    } else {
+                        // %u - unsigned int
+                        unsigned_number = va_arg(arguments, unsigned int);
+                    }
+                    
+                    // Convertir a string (base 10)
+                    itoa_hex(unsigned_number, conversion_buffer);
+                    // Necesitamos itoa en base 10 para unsigned, usaremos itoa_hex temporalmente
+                    // Mejor: hacer conversión manual
+                    if (unsigned_number == 0) {
+                        conversion_buffer[0] = '0';
+                        conversion_buffer[1] = '\0';
+                    } else {
+                        char temp[32];
+                        int idx = 0;
+                        uint64_t n = unsigned_number;
+                        
+                        while (n > 0) {
+                            temp[idx++] = '0' + (n % 10);
+                            n /= 10;
+                        }
+                        
+                        // Invertir
+                        for (int j = 0; j < idx; j++) {
+                            conversion_buffer[j] = temp[idx - 1 - j];
+                        }
+                        conversion_buffer[idx] = '\0';
+                    }
                     
                     if (width > 0) {
                         char pad_char = zero_pad ? '0' : ' ';

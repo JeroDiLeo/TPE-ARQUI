@@ -435,6 +435,18 @@ void handleInput(GameState *game) {
     for (int i = 0; i < read_count; i++) {
         char key = input[i];
         
+        // Controles del juego (ESC para salir, R para reiniciar)
+        if (key == KEY_ESC) {
+            game->game_over = 1;
+            game->winner = -1;  // Salida manual
+            continue;
+        }
+        
+        if (key == KEY_R && game->game_over) {
+            resetTron(game);
+            continue;
+        }
+        
         // Jugador 1 - WASD
         if (key == KEY_W && game->player1.dir != DIR_DOWN) {
             game->player1.dir = DIR_UP;
@@ -447,7 +459,7 @@ void handleInput(GameState *game) {
         }
         
         // Jugador 2 - IJKL (solo en modo 2 jugadores)
-        else if (game->num_players == 2) {
+        if (game->num_players == 2) {
             if (key == KEY_UP && game->player2.dir != DIR_DOWN) {
                 game->player2.dir = DIR_UP;
             } else if (key == KEY_DOWN && game->player2.dir != DIR_UP) {
@@ -457,14 +469,6 @@ void handleInput(GameState *game) {
             } else if (key == KEY_RIGHT && game->player2.dir != DIR_LEFT) {
                 game->player2.dir = DIR_RIGHT;
             }
-        }
-        
-        // Controles del juego
-        else if (key == KEY_R && game->game_over) {
-            resetTron(game);
-        } else if (key == KEY_Q || key == KEY_ESC) {
-            game->game_over = 1;
-            game->winner = -1;  // Salida manual
         }
     }
 }
@@ -650,7 +654,7 @@ void drawGameOver(GameState *game) {
     }
     
     const char *msg3 = "Presiona R para reiniciar\n";
-    const char *msg4 = "Presiona Q para salir\n";
+    const char *msg4 = "Presiona ESC para salir\n";
     
     puts(msg1, COLOR_TEXT);
     
@@ -674,21 +678,28 @@ void runTronGame(GameState *game) {
     
     print_tron_boot_logo();
     // Dibujar instrucciones iniciales
-    const char *title = "=== TRON LIGHT CYCLES ===\n\n";
+    const char *title = "\n\n=== TRON LIGHT CYCLES ===\n\n";
     const char *p1_controls = "Jugador 1 (CYAN): W/A/S/D\n";
     const char *p2_controls = "Jugador 2 (MAGENTA): I/J/K/L\n\n";
     const char *mode_msg = "Presiona 1 (1 jugador) o 2 (2 jugadores)\n";
+    const char *exit_msg = "Presiona ESC para salir\n";
     
     sys_write(1, title, 28, COLOR_TEXT);
     sys_write(1, p1_controls, 27, COLOR_P1_TRAIL);
     sys_write(1, p2_controls, 32, COLOR_P2_TRAIL);
     puts(mode_msg, COLOR_TEXT);
+    puts(exit_msg, COLOR_TEXT);
     
-    // Selección de modo: esperar 1 ó 2
+    // Selección de modo: esperar 1, 2 o ESC
     char sel = 0;
     while (1) {
         sel = (char)sys_wait_key();
         if (sel == '1' || sel == '2') break;
+        if (sel == KEY_ESC) {
+            // Salir sin iniciar el juego
+            sys_clear_screen();
+            return;
+        }
     }
     game->num_players = (sel == '1') ? 1 : 2;
     
@@ -736,7 +747,7 @@ void runTronGame(GameState *game) {
                 char k = (char)sys_wait_key();
                 if (k == KEY_R) {
                     resetTron(game);
-                } else if (k == KEY_Q || k == KEY_ESC) {
+                } else if (k == KEY_ESC) {
                     game->winner = -1;
                 }
             }
