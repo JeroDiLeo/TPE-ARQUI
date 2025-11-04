@@ -10,6 +10,7 @@ GLOBAL _outbyte
 GLOBAL _readTime
 
 extern exceptionHandler
+extern irqLastStackPtr
 
 
 section .text
@@ -37,32 +38,93 @@ cpuVendor:
 	ret
 
 _updateReg:
-	; Guardar todos los registros de propósito general
-	mov [_registersMemory], rax
-	mov [_registersMemory + 1*8], rbx
-	mov [_registersMemory + 2*8], rcx
-	mov [_registersMemory + 3*8], rdx
-	mov [_registersMemory + 4*8], rsi
-	mov [_registersMemory + 5*8], rdi
-	mov [_registersMemory + 6*8], rbp
-	mov [_registersMemory + 7*8], r8
-	mov [_registersMemory + 8*8], r9
-	mov [_registersMemory + 9*8], r10
-	mov [_registersMemory + 10*8], r11
-	mov [_registersMemory + 11*8], r12
-	mov [_registersMemory + 12*8], r13
-	mov [_registersMemory + 13*8], r14
-	mov [_registersMemory + 14*8], r15
-	
-	; Guardar RIP (dirección de retorno en el stack)
-	mov rax, [rsp]
-	mov [_registersMemory + 15*8], rax
-	
-	; Guardar RSP antes del call (+8 para compensar el push del call)
-	lea rax, [rsp + 8]
-	mov [_registersMemory + 16*8], rax
-	
-	ret
+	 mov rdx, [rel irqLastStackPtr]
+        test rdx, rdx
+        jz .done
+
+        ; RAX..R15 (orden esperado por userland)
+        mov rax, [rdx + 112]
+        mov [_registersMemory + 0*8], rax
+
+        mov rax, [rdx + 104]
+        mov [_registersMemory + 1*8], rax
+
+        mov rax, [rdx + 96]
+        mov [_registersMemory + 2*8], rax
+
+        mov rax, [rdx + 88]
+        mov [_registersMemory + 3*8], rax
+
+        mov rax, [rdx + 64]
+        mov [_registersMemory + 4*8], rax
+
+        mov rax, [rdx + 72]
+        mov [_registersMemory + 5*8], rax
+
+        mov rax, [rdx + 80]
+        mov [_registersMemory + 6*8], rax
+
+        mov rax, [rdx + 56]
+        mov [_registersMemory + 7*8], rax
+
+        mov rax, [rdx + 48]
+        mov [_registersMemory + 8*8], rax
+
+        mov rax, [rdx + 40]
+        mov [_registersMemory + 9*8], rax
+
+        mov rax, [rdx + 32]
+        mov [_registersMemory + 10*8], rax
+
+        mov rax, [rdx + 24]
+        mov [_registersMemory + 11*8], rax
+
+        mov rax, [rdx + 16]
+        mov [_registersMemory + 12*8], rax
+
+        mov rax, [rdx + 8]
+        mov [_registersMemory + 13*8], rax
+
+        mov rax, [rdx + 0]
+        mov [_registersMemory + 14*8], rax
+
+        ; RIP
+        mov rax, [rdx + 120]
+        mov [_registersMemory + 15*8], rax
+
+        ;
+        ; --- Marco de interrupción y reconstrucción de RSP --------------------
+        ; El CTX_SAVE deja en memoria, a partir de rdx, el frame con los registros
+        ; generales (R15..RAX) seguido del trío que apila el hardware: RIP, CS y
+        ; RFLAGS.  Si la interrupción ocurrió mientras estábamos en CPL3, la CPU
+        ; también empuja el RSP y el SS del proceso antes de saltar al stack de
+        ; kernel. En cambio, cuando la interrupción se atiende desde CPL0, no
+        ; hay cambio de stack: el RSP original es simplemente la dirección
+        ; inmediatamente posterior al frame salvado por CTX_SAVE.
+        ;
+        ; Para distinguir ambos escenarios, usamos los bits 0-1 del selector de
+        ; código: contienen el CPL con el que se disparó la interrupción.  Un CPL
+        ; distinto de cero implica un cruce de usuario->kernel y, por ende, que la
+        ; CPU apiló un RSP explícito; CPL=0 indica que debemos reconstruirlo de
+        ; forma manual.
+        ; ----------------------------------------------------------------------
+
+        ; RSP depende del CPL al momento de la interrupción
+        mov ecx, [rdx + 128]     ; Selector CS guardado (los bits 0-1 almacenan el CPL)
+        test cl, 3               ; CPL = 0? (interrupción en modo kernel)
+        jz .from_kernel
+
+        mov rax, [rdx + 144]     ; RSP apilado por la CPU (cambio de privilegio)
+        jmp .store_rsp
+
+.from_kernel:
+        lea rax, [rdx + 144]     ; RSP original = dirección posterior al frame
+
+.store_rsp:
+        mov [_registersMemory + 16*8], rax
+
+.done:
+        ret
 
 _getRegs:
 	mov rax, _registersMemory

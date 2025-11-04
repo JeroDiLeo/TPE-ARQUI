@@ -11,14 +11,14 @@ void print_tron_boot_logo(void) {
     _sys_clearScreen();
 
     const char *lines[] = {
-        "TTTTTTTTTTTTTT  RRRRRRRRRRRR    OOOOOOOOOO    NNN      NNN",
-        "TTTTTTTTTTTTTT  RRRRRRRRRRRR   OOOOOOOOOOOO   NNNN     NNN",
-        "TTTTTTTTTTTTTT  RRRR    RRRR  OOOO    OOOO    NNNNN    NNN",
-        "    TTTTTT      RRRR    RRRR  OOOO    OOOO    NNN NN   NNN",
-        "    TTTTTT      RRRRRRRRRRRR  OOOO    OOOO    NNN  NN  NNN",
-        "    TTTTTT      RRRRRRRRRR    OOOO    OOOO    NNN   NN NNN",
-        "    TTTTTT      RRRR   RRRR   OOOO    OOOO    NNN    NNNNN",
-        "    TTTTTT      RRRR    RRRR  OOOO    OOOO    NNN     NNNN",
+        "TTTTTTTTTTTTTT  RRRRRRRRRRRR   OOOOOOOOOOOO   NNN      NNN",
+        "TTTTTTTTTTTTTT  RRRRRRRRRRRR  OOOOOOOOOOOOOO  NNNN     NNN",
+        "TTTTTTTTTTTTTT  RRRR    RRRR  OOOO      OOOO  NNNNN    NNN",
+        "    TTTTTT      RRRR    RRRR  OOOO      OOOO  NNN NN   NNN",
+        "    TTTTTT      RRRRRRRRRRRR  OOOO      OOOO  NNN  NN  NNN",
+        "    TTTTTT      RRRRRRRRRR    OOOO      OOOO  NNN   NN NNN",
+        "    TTTTTT      RRRR   RRRR   OOOO      OOOO  NNN    NNNNN",
+        "    TTTTTT      RRRR    RRRR  OOOO      OOOO  NNN     NNNN",
         "    TTTTTT      RRRR     RRRR  OOOOOOOOOOOO   NNN      NNN",
         "    TTTTTT      RRRR      RRRR  OOOOOOOOOO    NNN      NNN"
     };

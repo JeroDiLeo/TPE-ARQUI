@@ -15,6 +15,7 @@ GLOBAL interrupt_syscall
 GLOBAL interrupt_exit
 
 GLOBAL _getSnapshot
+GLOBAL irqLastStackPtr
 
 EXTERN syscallHandler
 EXTERN exceptionHandler
@@ -119,10 +120,12 @@ SECTION .text
     jmp %%snapshot_done
 
 %%from_kernel_snapshot:
-    ; Desde kernel: usar RSP actual (antes del push del marco)
-    lea rax, [rsp + 40]        ; RSP antes del marco de interrupción (5 qwords)
+    ; Desde kernel: recuperar RSP original (CPU solo pushea RIP, CS y RFLAGS)
+    lea rax, [rsp + 24]        ; RSP previo a la interrupción (3 qwords)
     mov [regs +16*8], rax
-    mov rax, 0x10              ; SS del kernel (típicamente segmento 0x10)
+    ; Recuperar el selector de segmento real del kernel
+    mov ax, ss
+    movzx eax, ax
     mov [regs +19*8], rax
 
 %%snapshot_done:
@@ -245,12 +248,15 @@ picSlaveMask:
 ;==========================
 %macro irqHandlerMaster 1
 	CTX_SAVE 1              ; Guardar todos los registros incluyendo RAX
-	
-	mov rdi, %1             ; Primer argumento: número de IRQ
-	call irqDispatcher      ; Llamar handler en C (envía EOI internamente)
-	
-	CTX_RESTORE 1           ; Restaurar todos los registros incluyendo RAX
-	iretq
+        mov [rel irqLastStackPtr], rsp
+
+        mov rdi, %1             ; Primer argumento: número de IRQ
+        call irqDispatcher      ; Llamar handler en C (envía EOI internamente)
+
+        mov qword [irqLastStackPtr], 0
+
+        CTX_RESTORE 1           ; Restaurar todos los registros incluyendo RAX
+        iretq
 %endmacro
 
 
@@ -298,3 +304,4 @@ interrupt_exit:         ;(INT 0X81) - Terminar proceso y volver a shell
 
 SECTION .bss
 regs resq 20 ;Para fillSnapshot
+irqLastStackPtr resq 1
