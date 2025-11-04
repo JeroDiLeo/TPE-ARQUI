@@ -27,13 +27,6 @@ void shell_main(void) {
     sys_clear_screen();
     
     // Banner de bienvenida
-    puts("\n", COLOR_CYAN);
-    puts("   ___                   _                   ___  ___\n", COLOR_CYAN);
-    puts("  / _ \\ _   _  __ _ _ __ | |_ _   _ _ __ ___ / _ \\/ __|\n", COLOR_CYAN);
-    puts(" | | | | | | |/ _` | '_ \\| __| | | | '_ ` _ \\ | | \\__ \\\n", COLOR_CYAN);
-    puts(" | |_| | |_| | (_| | | | | |_| |_| | | | | | | |_| |__) |\n", COLOR_CYAN);
-    puts("  \\__\\_\\\\__,_|\\__,_|_| |_|\\__|\\__,_|_| |_| |_|\\___/____/\n", COLOR_CYAN);
-    puts("\n", COLOR_WHITE);
     puts("  ==============================================================\n", COLOR_MAGENTA);
     puts("    Sistema Operativo de 64 bits | Arquitectura x86-64\n", COLOR_WHITE);
     puts("    Desarrollado por Grupo 12 | ITBA 2025\n", COLOR_YELLOW);

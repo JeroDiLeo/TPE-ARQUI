@@ -1,9 +1,3 @@
-/**
- * @file benchmark.c
- * @brief Sistema de benchmarking para medir rendimiento
- * @date 2025
- */
-
 #include "benchmark.h"
 #include "syscalls.h"
 #include "io_utils.h"
@@ -22,9 +16,8 @@
 
 // ============== FUNCIONES DE BENCHMARKING ==============
 
-/**
- * @brief Función de prueba para medir rendimiento de CPU
- */
+
+//Función de prueba para medir rendimiento de CPU
 static uint64_t cpu_intensive_operation(uint64_t n) {
     uint64_t result = 0;
     for (uint64_t i = 0; i < n; i++) {
@@ -34,9 +27,8 @@ static uint64_t cpu_intensive_operation(uint64_t n) {
     return result;
 }
 
-/**
- * @brief Benchmark de operaciones con enteros
- */
+
+//Benchmark de operaciones con enteros
 static void benchmark_integer_ops(uint64_t iterations) {
     puts("  [INT] Operaciones con enteros... ", COLOR_WHITE);
     
@@ -55,9 +47,8 @@ static void benchmark_integer_ops(uint64_t iterations) {
     puts(")\n", COLOR_WHITE);
 }
 
-/**
- * @brief Benchmark de operaciones con punto flotante
- */
+
+//Benchmark de operaciones con punto flotante
 static void benchmark_float_ops(uint64_t iterations) {
     puts("  [FPU] Operaciones con punto flotante... ", COLOR_WHITE);
     
@@ -78,9 +69,7 @@ static void benchmark_float_ops(uint64_t iterations) {
     puts(" ticks\n", COLOR_WHITE);
 }
 
-/**
- * @brief Benchmark de acceso a memoria
- */
+//Benchmark de acceso a memoria
 static void benchmark_memory_access(void) {
     puts("  [MEM] Accesos a memoria... ", COLOR_WHITE);
     
@@ -114,16 +103,16 @@ static void benchmark_memory_access(void) {
     puts(")\n", COLOR_WHITE);
 }
 
-/**
- * @brief Benchmark de llamadas al sistema (syscalls)
- */
+
+//Benchmark de llamadas al sistema (syscalls)
+
 static void benchmark_syscalls(void) {
     puts("  [SYS] Llamadas al sistema... ", COLOR_WHITE);
     
     uint64_t start_time = getTicks();
     
     for (int i = 0; i < SYSCALL_ITERATIONS; i++) {
-        sys_get_coords();  // Syscall simple
+        sys_get_coords();  
     }
     
     uint64_t end_time = getTicks();
@@ -138,9 +127,9 @@ static void benchmark_syscalls(void) {
     puts(" llamadas)\n", COLOR_WHITE);
 }
 
-/**
- * @brief Benchmark de operaciones de I/O
- */
+
+//Benchmark de operaciones de I/O
+
 static void benchmark_io_operations(void) {
     puts("  [I/O] Operaciones de entrada/salida... ", COLOR_WHITE);
     
@@ -163,17 +152,16 @@ static void benchmark_io_operations(void) {
     puts(" operaciones)\n", COLOR_WHITE);
 }
 
-/**
- * @brief Ejecuta suite completa de benchmarks
- */
+
+// Ejecuta todos los  benchmarks
+
 void run_benchmarks(void) {
     puts("\n", COLOR_WHITE);
     puts("╔══════════════════════════════════════╗\n", COLOR_CYAN);
-    puts("║   SISTEMA DE BENCHMARKING - JerOS   ║\n", COLOR_CYAN);
+    puts("║        SISTEMA DE BENCHMARKING       ║\n", COLOR_CYAN);
     puts("╚══════════════════════════════════════╝\n", COLOR_CYAN);
     puts("\n", COLOR_WHITE);
     
-    // Información del sistema
     puts("Ejecutando benchmarks...\n\n", COLOR_WHITE);
     
     // Benchmarks de CPU
@@ -201,9 +189,9 @@ void run_benchmarks(void) {
     puts("\n", COLOR_WHITE);
 }
 
-/**
- * @brief Ejecuta un benchmark específico
- */
+
+ //Ejecuta un benchmark específico
+
 void run_specific_benchmark(const char *test_name) {
     if (strcmp(test_name, "cpu") == 0) {
         puts("\n━━━ BENCHMARK DE CPU ━━━\n", COLOR_YELLOW);
@@ -224,15 +212,15 @@ void run_specific_benchmark(const char *test_name) {
     }
 }
 
-/**
- * @brief Muestra información de ayuda sobre benchmarks
- */
+
+//Muestra información de ayuda sobre benchmarks
+
 void benchmark_help(void) {
     puts("\n", COLOR_WHITE);
-    puts("BENCHMARK - Sistema de medición de rendimiento\n\n", COLOR_CYAN);
+    puts("BENCHMARK - Sistema de medicion de rendimiento\n\n", COLOR_CYAN);
     puts("Uso:\n", COLOR_WHITE);
     puts("  benchmark          - Ejecuta todos los benchmarks\n", COLOR_WHITE);
-    puts("  benchmark <test>   - Ejecuta un benchmark específico\n", COLOR_WHITE);
+    puts("  benchmark <test>   - Ejecuta un benchmark especifico\n", COLOR_WHITE);
     puts("\n", COLOR_WHITE);
     puts("Tests disponibles:\n", COLOR_YELLOW);
     puts("  cpu     - Operaciones de CPU (enteros y flotantes)\n", COLOR_WHITE);

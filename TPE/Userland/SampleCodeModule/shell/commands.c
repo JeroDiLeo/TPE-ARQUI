@@ -123,7 +123,7 @@ static struct Tcommand cmd_beep_s = {
 static struct Tcommand cmd_benchmark_s = {
     .name = "benchmark",
     .handler = cmd_benchmark,
-    .description = "Ejecuta benchmarks de rendimiento",
+    .description = "Ejecuta benchmarks de rendimiento(Use 'benchmark help' para mas informacion)",
     .usage = "benchmark [test_name|help]"
 };
 
@@ -179,9 +179,7 @@ static Command find_command(const char *name) {
     return NULL;
 }
 
-/**
- * @brief Parsea y ejecuta un comando
- */
+//Parsea y ejecuta un comando
 void parse_and_execute(char *input, int * isExit) {
     static char *argv_array[MAX_ARGS];
     static char last_input[MAX_COMMAND_LENGTH];
