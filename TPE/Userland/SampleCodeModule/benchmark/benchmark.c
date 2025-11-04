@@ -47,7 +47,7 @@ static void benchmark_integer_ops(uint64_t iterations) {
     puts(")\n", COLOR_WHITE);
 }
 
-
+static volatile double float_result_sink = 0.0;
 //Benchmark de operaciones con punto flotante
 static void benchmark_float_ops(uint64_t iterations) {
     puts("  [FPU] Operaciones con punto flotante... ", COLOR_WHITE);
@@ -66,7 +66,38 @@ static void benchmark_float_ops(uint64_t iterations) {
     char buffer[32];
     itoa(elapsed, buffer, 10);
     puts(buffer, COLOR_CYAN);
-    puts(" ticks\n", COLOR_WHITE);
+     puts(" ticks (resultado: ", COLOR_WHITE);
+
+    int is_negative = result < 0.0;
+    double abs_result = is_negative ? -result : result;
+    uint64_t integer_part = (uint64_t)abs_result;
+    double fractional_value = (abs_result - (double)integer_part) * 10000.0;
+    if (fractional_value < 0) {
+        fractional_value = 0;
+    }
+    uint64_t fractional_part = (uint64_t)fractional_value;
+    if (fractional_part > 9999) {
+        fractional_part = 9999;
+    }
+
+    if (is_negative) {
+        putcharColor('-', COLOR_CYAN);
+    }
+
+    itoa(integer_part, buffer, 10);
+    puts(buffer, COLOR_CYAN);
+    putcharColor('.', COLOR_CYAN);
+
+    char fractional_buffer[5];
+    for (int i = 3; i >= 0; i--) {
+        fractional_buffer[i] = '0' + (fractional_part % 10);
+        fractional_part /= 10;
+    }
+    fractional_buffer[4] = '\0';
+    puts(fractional_buffer, COLOR_CYAN);
+    puts(")\n", COLOR_WHITE);
+
+    float_result_sink = result; // Evitar optimización
 }
 
 //Benchmark de acceso a memoria
