@@ -1,33 +1,20 @@
-/**
- * @file io_utils.c
- * @brief Funciones de I/O y memoria
- */
-
 #include "io_utils.h"
 #include "syscalls.h"
 #include "string_utils.h"
 #include <stdarg.h>
 
-// File descriptors
 #define STDIN  0
 #define STDOUT 1
 #define STDERR 2
-
-// Buffer size para conversiones en printf
 #define CONVERSION_BUFFER_SIZE 64
 
-// ============== I/O HELPERS ==============
 
-/**
- * @brief Imprime un carácter con color
- */
+//Imprime un carácter con color
 void putcharColor(char c, uint64_t color) {
     sys_write(STDOUT, &c, 1, color);
 }
 
-/**
- * @brief Imprime una cadena con color
- */
+//Imprime una cadena con color
 void puts(const char *str, uint64_t color) {
     while (*str != '\0') {
         putcharColor(*str, color);
@@ -35,10 +22,7 @@ void puts(const char *str, uint64_t color) {
     }
 }
 
-/**
- * @brief Lee un carácter del teclado
- * @return Carácter leído o -1 si no hay entrada
- */
+//Lee un carácter del teclado
 int getchar() {
     char c;
     int bytes_read = sys_read(STDIN, &c, 1);
@@ -49,52 +33,26 @@ int getchar() {
 }
 
 int isChar(char c){
-    if((c>='a' && c<='z') || (c>='A' && c<='Z')){
-        return 1;
-    }
-    return 0;
+    return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
 }
 
 int isDigit(char c){
-    if(c>='0' && c<='9'){
-        return 1;
-    }
-    return 0;
+    return (c >= '0' && c <= '9');
 }
 
-
-//=================Funciones Importantes============================
-
-//Printf  la vamos usar para imprimir los regs en pantalla, para toda la shell y tambien en el juego seguro
-
-//imprime texto formateado y soporta strings enteros decimales y hexadecimales y caracteres
-
-//puts imprime una cadena y agrega salto de linea al final
-//Nos va a servir para en comandos mostrar la informacion, en la shell para los msg del so y para los msg del menu del juego
-/**
- * @brief Imprime texto formateado con soporte para %s, %d, %c, %x
- * @param format Cadena de formato
- * @return Cantidad de caracteres impresos
- */
-// Helper para imprimir con padding
 static void print_with_padding(const char *str, int width, char pad_char, int *printed_chars) {
     int len = strlen(str);
-    
-    // Agregar padding a la izquierda
     for (int i = len; i < width; i++) {
         putcharColor(pad_char, COLOR_WHITE);
         (*printed_chars)++;
     }
-    
     puts(str, COLOR_WHITE);
     (*printed_chars) += len;
 }
 
-// Helper para parsear el ancho del formato (ej: "02" de "%02d")
 static int parse_format_width(const char *format, int *index, int *zero_pad) {
     int width = 0;
     *zero_pad = (format[*index] == '0');
-    
     while (format[*index] >= '0' && format[*index] <= '9') {
         width = width * 10 + (format[*index] - '0');
         (*index)++;
@@ -251,29 +209,8 @@ int printf(const char *format, ...) {
     va_end(arguments);
     return printed_chars;
 }
-//===================================================================
 
-//=================Funciones Graficas=============================
-
-//DrawRectangle
-//clearscreen
-
-//================================================================
-
-//=================Funciones de info de pantalla=================
-//getScreenWidth y getScreenHeight (Dimensiones de la pantalla) Usado en la shell
-//getCursorX y getCursorY (Obtener la pos actual del cursor) Usado en la shell para dibujarlo correctamente
-//getFontWidth y getFontHeight (Dimensiones de los caracteres) Usado en la shell para el cursor
-//setFontScale (Escala de los caracteres) Usado en la shell para agrandar el texto
-//=================================================================
-
-
-
-
-/**=======Verificar esta funcion=========
- * @brief Lee una línea completa con echo
- * @return Cantidad de caracteres leídos (sin contar \0)
- */
+//Lee una línea completa con echo
 int read_line(char *buffer, int max_length) {
     int i = 0;
     char c;
@@ -311,11 +248,7 @@ int read_line(char *buffer, int max_length) {
     return i;
 }
 
-// ============== CONVERSION FUNCTIONS ==============
-
-/**
- * @brief Convierte string a entero (decimal)       (Chequeada)
- */
+//Convierte string a entero (decimal)
 int atoi(const char *str) {
     int result = 0;
     int sign = 1;
@@ -343,9 +276,8 @@ int atoi(const char *str) {
 
 
 
-/**
- * @brief Convierte entero a string en base dada        (Se usa para el printf) (Revisarla)
- */
+
+//Convierte entero a string en base dada        (Se usa para el printf)
 void itoa(int value, char *buffer, int base) {
     if (base < 2 || base > 36) {
         *buffer = '\0';
@@ -385,9 +317,8 @@ void itoa(int value, char *buffer, int base) {
     }
 }
 
-/**
- * @brief Convierte entero a string hexadecimal con 0x prefix
- */
+
+//Convierte entero a string hexadecimal con 0x prefix
 void itoa_hex(uint64_t value, char *buffer) {
     buffer[0] = '0';
     buffer[1] = 'x';
@@ -419,78 +350,6 @@ void itoa_hex(uint64_t value, char *buffer) {
         *end_ptr-- = temp_char;
     }
 }
-
-/**
- * @brief Convierte string hexadecimal a entero      (Me PARECE QUE NO LA VAMOS A USAR)
- */
-// uint64_t atoihex(const char *str) {
-//     uint64_t result = 0;
-    
-//     // Saltar "0x" si existe
-//     if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
-//         str += 2;
-//     }
-    
-//     while (*str) {
-//         char c = *str++;
-        
-//         if (c >= '0' && c <= '9') {
-//             result = result * 16 + (c - '0');
-//         } else if (c >= 'a' && c <= 'f') {
-//             result = result * 16 + (c - 'a' + 10);
-//         } else if (c >= 'A' && c <= 'F') {
-//             result = result * 16 + (c - 'A' + 10);
-//         } else {
-//             break;  // Carácter no válido
-//         }
-//     }
-    
-//     return result;
-// }
-/**
- * @brief Convierte entero sin signo a string           (No es necesaria )
- */
-// void uitoa(uint64_t value, char *buffer, int base) {
-//     if (base < 2 || base > 36) {
-//         *buffer = '\0';
-//         return;
-//     }
-    
-//     char *ptr = buffer;
-//     uint64_t tmp_value;
-    
-//     do {
-//         tmp_value = value;
-//         value /= base;
-//         *ptr++ = "0123456789abcdefghijklmnopqrstuvwxyz"[tmp_value - value * base];
-//     } while (value);
-    
-//     *ptr-- = '\0';
-    
-//     // Invertir cadena
-//     char *start = buffer;
-//     while (start < ptr) {
-//         char tmp = *start;
-//         *start++ = *ptr;
-//         *ptr-- = tmp;
-//     }
-// }
-
-// ============== FORMATTED OUTPUT ==============
-
-// ============== FORMATTED INPUT ==============
-
-/**
- * @brief Lee entrada formateada (scanf)
- * @param format Cadena de formato con especificadores %d, %s, %c, %x
- * @return Cantidad de elementos leídos exitosamente
- * 
- * Especificadores soportados:
- * - %d: Entero decimal
- * - %x: Entero hexadecimal (con o sin 0x)
- * - %s: String (hasta espacio/newline)
- * - %c: Un solo carácter
- */
 int scanf(const char *format, ...) {
     va_list arguments;
     va_start(arguments, format);

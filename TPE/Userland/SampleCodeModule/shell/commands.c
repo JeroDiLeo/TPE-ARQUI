@@ -1,9 +1,3 @@
-/**
- * @file commands.c
- * @brief Implementación de comandos de la shell
- * @date 2025
- */
-
 #include "syscalls.h"
 #include "io_utils.h"
 #include "string_utils.h"
@@ -15,9 +9,6 @@
 #include "benchmark.h"
 #include <stddef.h>
 
-// ============== ESTRUCTURAS ==============
-
-// Definición de la estructura Tcommand (el typedef está en commands.h)
 struct Tcommand {
     const char *name;
     int (*handler)(int argc, char **argv);
@@ -25,9 +16,6 @@ struct Tcommand {
     const char *usage;
 };
 
-// ============== FORWARD DECLARATIONS ==============
-
-// Comandos
 static int cmd_help(int argc, char **argv);
 static int cmd_time(int argc, char **argv);
 static int cmd_timezone(int argc, char **argv);
@@ -40,8 +28,6 @@ static int cmd_exit(int argc, char **argv);
 static int cmd_tron(int argc, char **argv);
 static int cmd_beep(int argc, char **argv);
 static int cmd_benchmark(int argc, char **argv);
-
-// ============== TABLA DE COMANDOS ==============
 
 static struct Tcommand cmd_help_s = {
     .name = "help",

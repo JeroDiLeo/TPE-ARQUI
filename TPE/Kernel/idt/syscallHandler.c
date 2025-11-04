@@ -2,32 +2,12 @@
 #include "SysCall_Lib.h"
 #include "naiveConsole.h"
 
-/* Define SYSCALL_DEBUG to re-enable verbose syscall tracing. */
-// #define SYSCALL_DEBUG
-
 uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, uint64_t r8, uint64_t rax) {
-#ifdef SYSCALL_DEBUG
-    ncPrint("SysCall - ");
-    ncPrint("NUM: ");
-    ncPrintHex(rax);
-    ncPrint(" | FD: ");
-    ncPrintHex(rdi);
-    ncPrint(" | BUF: ");
-    ncPrintHex(rsi);
-    ncPrint(" | LEN: ");
-    ncPrintHex(rdx);
-    ncPrint(" | COLOR: ");
-    ncPrintHex(rcx);
-    ncNewline();
-#endif
-
-    // Validar número de syscall
     if(rax < 0 || rax > SYS_GETTICKS) {
         ncPrint("ERROR: Invalid syscall number\n");
         return -1;
     }
 
-    // Validar parámetros para syscalls específicas
     if(rax == SYS_WRITE) {
         if(rsi == 0) {
             ncPrint("ERROR: NULL buffer\n");
