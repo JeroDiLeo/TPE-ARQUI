@@ -68,19 +68,20 @@ Es posible utilizar la shell como un intérprete de comandos. Para ejecutar un c
 ### Comandos disponibles:
 
 | Comando | Descripción | Parámetros |
-|---------|-------------|------------|
+|----------|--------------|------------|
 | `help` | Muestra un mensaje de ayuda con los comandos disponibles | - |
 | `clear` | Limpia la pantalla | - |
 | `exit` | Cierra la shell terminando con la ejecución | - |
 | `time` | Muestra la fecha y hora actual | - |
-| `timeZone` | Modifica el UTC de time | - |
+| `timeZone` | Modifica el UTC de `time` | - |
 | `scale <1-3>` | Cambia el tamaño de la fuente de la shell | 1, 2 o 3 |
 | `inforeg` | Muestra los valores de los registros (guardar con Ctrl+R) | - |
-| `divzero` | Prueba excepción de división por cero | - |
-| `invopcode` | Prueba excepción de código de operación inválido | - |
-| `beep <freq> <ms>` | Reproduce un sonido | Frecuencia (Hz), duración (ms) |
-| `tron <fps>` | Ejecuta el juego TRON | Opcional fps(Printea fps en el HUD) |
-| `benchmark <param>` | Muestra datos de rendimiento del SO | Opcional Explicado en informe |
+| `divzero` | Prueba la excepción de división por cero | - |
+| `invopcode` | Prueba la excepción de código de operación inválido | - |
+| `beep <freq> <ms>` | Reproduce un sonido a través del PC Speaker | Frecuencia (Hz), duración (ms) |
+| `tron <fps>` | Ejecuta el juego TRON | Opcional: `fps` muestra los cuadros por segundo en pantalla |
+| `benchmark <param>` | Ejecuta pruebas de rendimiento del sistema.<br><br>**Parámetros disponibles:**<br>• `cpu` → Mide rendimiento del procesador mediante operaciones con enteros y punto flotante.<br>• `mem` → Evalúa la velocidad de lectura y escritura en memoria.<br>• `sys` → Mide el tiempo de ejecución promedio de llamadas al sistema (syscalls).<br>• `io` → Evalúa el rendimiento de operaciones de entrada/salida con los drivers.<br><br>Si se ejecuta sin parámetros, corre **todas las pruebas** de forma secuencial. |
+
 
 ### Juego TRON
 - **Jugador 1:** Teclas `W`, `A`, `S`, `D`
