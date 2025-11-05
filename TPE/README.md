@@ -73,14 +73,14 @@ Es posible utilizar la shell como un intérprete de comandos. Para ejecutar un c
 | `clear` | Limpia la pantalla | - |
 | `exit` | Cierra la shell terminando con la ejecución | - |
 | `time` | Muestra la fecha y hora actual | - |
-| `timeZone` | modifica el UTC de time | - |
+| `timeZone` | Modifica el UTC de time | - |
 | `scale <1-3>` | Cambia el tamaño de la fuente de la shell | 1, 2 o 3 |
 | `inforeg` | Muestra los valores de los registros (guardar con Ctrl+R) | - |
 | `divzero` | Prueba excepción de división por cero | - |
 | `invopcode` | Prueba excepción de código de operación inválido | - |
 | `beep <freq> <ms>` | Reproduce un sonido | Frecuencia (Hz), duración (ms) |
-| `tron [1\|2]` | Ejecuta el juego TRON | 1 jugador o 2 jugadores |
-| `benchmark` | muestra datos de rendimiento del SO | - |
+| `tron <fps>` | Ejecuta el juego TRON | Opcional fps(Printea fps en el HUD) |
+| `benchmark <param>` | Muestra datos de rendimiento del SO | Opcional Explicado en informe |
 
 ### Juego TRON
 - **Jugador 1:** Teclas `W`, `A`, `S`, `D`
