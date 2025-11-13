@@ -183,8 +183,19 @@ _getSnapshot:
     fillSnapshot
     mov  rdi, %1
     call exceptionHandler
-    mov  rax, userland          ; solo cambiar RIP del frame
-    mov  [rsp + 0], rax
+    
+    ; Resetear stack manualmente (no hay SS:RSP en el frame)
+    call getStackBase
+    mov  rsp, rax               ; Resetear RSP directamente
+    sub  rsp, 24                ; Espacio para frame de iretq (RIP, CS, RFLAGS)
+    
+    ; Reconstruir frame de interrupción
+    mov  rax, userland
+    mov  [rsp + 0], rax         ; RIP = 0x400000
+    mov  word [rsp + 8], 0x08   ; CS = kernel code segment
+    pushfq
+    pop  qword [rsp + 16]       ; RFLAGS = actual
+    
     iretq
 
 %%from_kernel:
