@@ -147,6 +147,9 @@ _getSnapshot:
 ; - Si vino de KERNEL:   muestra info (si es posible) y detiene sistema
 
 %macro exceptionHandlerMacro 1
+    ; Capturar registros antes de modificar cualquiera
+    fillSnapshot
+
     ; Detectar si la excepción proviene de userland o kernel
     ; 1) Si CPL=3 => seguro userland (stack switch: frame incluye SS:RSP)
     ; 2) Si CPL!=3, pero RIP pertenece [0x400000,0x600000) => userland en CPL0
@@ -169,7 +172,6 @@ _getSnapshot:
 
 %%from_user_ring3:
     ; === USERLAND (CPL3) ===
-    fillSnapshot
     mov  rdi, %1
     call exceptionHandler
     call getStackBase           ; RAX = nuevo RSP de usuario
@@ -180,7 +182,6 @@ _getSnapshot:
 
 %%from_user_ring0:
     ; === USERLAND en CPL0 (sin cambio de pila) ===
-    fillSnapshot
     mov  rdi, %1
     call exceptionHandler
     
@@ -194,13 +195,14 @@ _getSnapshot:
     mov  [rsp + 0], rax         ; RIP = 0x400000
     mov  word [rsp + 8], 0x08   ; CS = kernel code segment
     pushfq
-    pop  qword [rsp + 16]       ; RFLAGS = actual
+    pop rax
+    mov [rsp + 16], rax        ; RFLAGS = actual
+    ; pop  qword [rsp + 16]       ; RFLAGS = actual
     
     iretq
 
 %%from_kernel:
     ; === KERNEL ===
-    fillSnapshot
     mov  rdi, %1
     call exceptionHandler
     cli

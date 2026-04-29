@@ -3,7 +3,7 @@
 #include "naiveConsole.h"
 
 uint64_t syscallHandler(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, uint64_t r8, uint64_t rax) {
-    if(rax < 0 || rax > SYS_GETTICKS) {
+    if( rax > SYS_GETTICKS) { 
         ncPrint("ERROR: Invalid syscall number\n");
         return -1;
     }
